@@ -1,7 +1,10 @@
 <template>
-  <view :class="styles.Navigation" :style="{ height: rootHeight }">
-    <view :class="styles.fixed" :style="{ paddingTop: contentPaddingTop }">
-      <view :class="styles.content" :style="{ height: stateHeigth }">
+  <view :class="styles.Navigation" :style="{ height: rootHeight + 'px' }">
+    <view
+      :class="styles.fixed"
+      :style="{ paddingTop: contentPaddingTop + 'px' }"
+    >
+      <view :class="styles.content" :style="{ height: stateHeigth + 'px' }">
         <!-- 左边 -->
         <view
           v-if="canShowLeftIcon"
