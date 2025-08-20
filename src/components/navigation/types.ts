@@ -16,4 +16,9 @@ export interface NavigationProps {
    * @default true
    */
   place?: boolean
+  /**
+   * 背景透明度
+   * @default 1
+   */
+  bgOpacity?: number
 }

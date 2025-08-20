@@ -2,7 +2,10 @@
   <view :class="styles.Navigation" :style="{ height: rootHeight + 'px' }">
     <view
       :class="styles.fixed"
-      :style="{ paddingTop: contentPaddingTop + 'px' }"
+      :style="{
+        paddingTop: contentPaddingTop + 'px',
+        backgroundColor: `rgba(255, 255, 255, ${bgOpacity})`,
+      }"
     >
       <view :class="styles.content" :style="{ height: stateHeigth + 'px' }">
         <!-- 左边 -->
@@ -13,6 +16,10 @@
         >
           <image :src="images.left" :class="styles.leftIcon" />
         </view>
+        <!-- 左侧内容插槽 -->
+        <view v-if="slots.left" :class="styles.leftSlot">
+          <slot name="left"></slot>
+        </view>
         <view :class="styles.title">
           {{ title }}
         </view>
@@ -22,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, useSlots } from 'vue'
 import Taro, {
   getCurrentPages,
   getMenuButtonBoundingClientRect,
@@ -37,7 +44,11 @@ const {
   title = '',
   backVisible = true,
   place = true,
+  bgOpacity = 1,
 } = defineProps<NavigationProps>()
+
+const slots = useSlots()
+const hasLeftSlotContent = computed(() => !!slots.left)
 
 const isWeapp = process.env.TARO_ENV === 'weapp'
 // h5暂时不支持 API getMenuButtonBoundingClientRect, 模拟导航栏iphone6/7/8固定高度
@@ -62,7 +73,9 @@ const navigationHeight = isWeapp ? stateHeigth + statusBarHeight : stateHeigth
 
 const rootHeight = ref(!place ? 0 : navigationHeight)
 const contentPaddingTop = ref(isWeapp ? statusBarHeight : 0)
-const canShowLeftIcon = ref(backVisible && getCurrentPages().length > 1)
+const canShowLeftIcon = computed(
+  () => backVisible && getCurrentPages().length > 1 && !hasLeftSlotContent.value
+)
 
 function hanldeNavBack() {
   Taro.navigateBack({ delta: 1 })
