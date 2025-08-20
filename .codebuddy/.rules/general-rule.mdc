@@ -1,0 +1,232 @@
+---
+description: Taro Vue3 TypeScript 跨平台项目开发规则
+globs:
+alwaysApply: true
+---
+
+# Taro Vue3 TypeScript 跨平台项目开发规则
+
+## 项目概述
+这是一个使用 Taro 4.1.5 + Vue 3 + TypeScript + TailwindCSS + Pinia 开发的跨平台项目，支持微信小程序、H5、支付宝小程序等多端部署。
+
+## 技术栈
+- **框架**: Taro 4.1.5 + Vue 3.5.18
+- **语言**: TypeScript 5.9.2
+- **状态管理**: Pinia 3.0.3
+- **样式**: TailwindCSS 3.4.17 + Less
+- **UI组件**: NutUI-Taro 4.3.14 + Taro-UI 3.3.0
+- **构建工具**: Webpack 5 + Babel
+- **代码规范**: ESLint + Prettier + Stylelint + Commitlint
+
+## 目录结构规范
+
+### 核心目录
+```
+src/
+├── app.ts              # 应用入口文件
+├── app.config.ts       # 全局配置
+├── app.less           # 全局样式
+├── config.ts          # 应用配置
+├── globalStorage.ts   # 全局存储
+├── assets/            # 静态资源
+├── components/        # 公共组件
+├── pages/            # 页面
+├── hooks/            # 自定义 Hooks
+├── stores/           # Pinia 状态管理
+├── utils/            # 工具函数
+├── request/          # 网络请求
+├── enums/            # 枚举定义
+├── layout/           # 布局组件
+└── styles/           # 样式文件
+```
+
+### 组件目录结构
+基于主流组件库最佳实践，每个组件应包含：
+```
+componentName/
+├── ComponentName.vue  # 主组件文件（PascalCase 命名）
+├── index.ts           # 导出文件（统一对外接口）
+├── types.ts           # 类型定义（接口契约）
+└── index.module.less  # 样式文件（可选，复杂样式）
+```
+
+**设计原理：**
+- **主流命名规范**：主组件使用 PascalCase，与 Element Plus、Ant Design Vue 等保持一致
+- **逻辑就近原则**：简单组件逻辑直接写在 `.vue` 文件中，避免过度工程化
+- **接口优先**：`types.ts` 定义组件契约，支持 API 设计先行
+- **统一导出**：`index.ts` 控制对外 API，支持按需加载和版本管理
+- **样式按需**：简单组件优先使用 TailwindCSS，复杂样式才使用 CSS Modules
+
+**逻辑抽离原则：**
+- 组件逻辑超过 50 行时，考虑抽离到单独的 `hooks.ts` 文件
+- 需要跨组件复用的逻辑，抽离到 `src/hooks/` 全局目录
+
+### 页面目录结构
+每个页面应包含：
+```
+pageName/
+├── index.vue          # 页面组件
+├── index.config.ts    # 页面配置
+├── viewModel.ts       # 页面逻辑（MVVM 的 ViewModel 层）
+├── types.ts           # 页面类型定义（可选）
+├── components/        # 页面专用组件（可选）
+└── index.module.less  # 页面样式（可选）
+```
+
+**设计原理：**
+- **MVVM 架构**：`viewModel.ts` 体现 ViewModel 层，处理页面业务逻辑
+- **业务逻辑分离**：将复杂的页面逻辑从组件中抽离，提高可维护性
+- **类型安全**：`types.ts` 定义页面相关的类型
+- **组件就近原则**：页面专用组件放在 `components/` 目录
+- **配置分离**：页面配置独立管理
+
+## 编码规范
+
+### 1. 文件命名
+- **页面文件**: 使用 kebab-case，如 `user-profile/`
+- **组件文件**: 使用 camelCase，如 `actionSheet/`
+- **工具文件**: 使用 camelCase，如 `help.ts`
+- **类型文件**: 使用 camelCase，如 `const.ts`
+
+### 2. 样式规范
+- **优先使用 TailwindCSS** 进行快速开发
+- **复杂样式使用 CSS Modules** (`index.module.less`)
+- **全局样式** 放在 `src/styles/` 目录
+- **组件样式** 必须使用 CSS Modules 避免污染
+- 使用 Less 变量和混入提高可维护性
+
+### 3. 状态管理规范
+```typescript
+// stores/example.ts
+import { defineStore } from 'pinia'
+
+export const useExampleStore = defineStore('example', () => {
+  // State
+  const count = ref(0)
+  const items = ref<Item[]>([])
+  
+  // Getters
+  const doubleCount = computed(() => count.value * 2)
+  
+  // Actions
+  const increment = () => {
+    count.value++
+  }
+  
+  const fetchItems = async () => {
+    try {
+      const response = await api.getItems()
+      items.value = response.data
+    } catch (error) {
+      console.error('Failed to fetch items:', error)
+    }
+  }
+  
+  return {
+    count,
+    items,
+    doubleCount,
+    increment,
+    fetchItems
+  }
+})
+```
+
+### 4. 网络请求规范
+- 使用统一的请求封装 (`src/request/`)
+- 按 HTTP 方法分类 API (`get.ts`, `post.ts`, `put.ts`, `delete.ts`)
+- 使用拦截器处理通用逻辑
+- 错误处理统一管理
+
+### 5. 工具函数规范
+```typescript
+// utils/help.ts
+/**
+ * 格式化日期
+ * @param date 日期对象或时间戳
+ * @param format 格式化模板
+ * @returns 格式化后的日期字符串
+ */
+export const formatDate = (
+  date: Date | number,
+  format: string = 'YYYY-MM-DD'
+): string => {
+  // 实现逻辑
+}
+```
+
+## 跨平台开发规范
+
+### 1. 平台兼容性
+- 使用 Taro 提供的 API 而非原生 API
+- 条件编译处理平台差异：
+```typescript
+// #ifdef H5
+import { showToast } from '@tarojs/taro'
+// #endif
+
+// #ifdef WEAPP
+import Taro from '@tarojs/taro'
+// #endif
+```
+
+### 2. 样式适配
+- TailwindCSS 配置已适配小程序
+- 避免使用不支持的 CSS 属性
+
+### 3. 组件使用
+- UI 组件库使用 NutUI-Taro 和 Taro-UI
+- 自定义组件确保跨平台兼容
+
+## 代码质量规范
+
+### 1. 代码检查
+- **ESLint**: 代码语法和规范检查
+- **Prettier**: 代码格式化
+- **Stylelint**: 样式代码检查
+- **TypeScript**: 类型检查
+
+### 2. Git 提交规范
+使用 Conventional Commits 规范：
+```
+feat: 新功能
+fix: 修复bug
+docs: 文档更新
+style: 代码格式调整
+refactor: 代码重构
+test: 测试相关
+chore: 构建过程或辅助工具的变动
+```
+
+### 3. 性能优化
+- 使用 `computed` 缓存计算结果
+- 合理使用 `v-show` 和 `v-if`
+- 图片资源使用 WebP 格式
+- 启用代码分割和懒加载
+
+## 最佳实践
+
+1. **组件设计**: 单一职责，高内聚低耦合
+2. **状态管理**: 合理划分 store，避免过度集中
+3. **样式管理**: TailwindCSS + CSS Modules 结合使用
+4. **类型安全**: 充分利用 TypeScript 类型系统
+5. **性能优化**: 关注首屏加载和运行时性能
+6. **代码复用**: 提取公共组件和工具函数
+7. **错误处理**: 统一错误处理和用户反馈
+8. **测试覆盖**: 关键业务逻辑编写单元测试
+
+## 注意事项
+
+1. 小程序包大小限制，注意代码分包
+2. 不同平台的 API 差异，做好兼容处理
+3. 样式在不同平台的表现差异
+4. 图片资源的格式和大小优化
+5. 网络请求的超时和重试机制
+
+## 本项目规则文件说明
+本项目使用以下规则文件：
+- general-rule.mdc：通用规范（本文件）
+- readme.mdc：文档规范
+- tailwind.mdc：tailwindCSS开发规范
+- typescript.mdc：typescript开发规范
+- vue.mdc：vue开发规范

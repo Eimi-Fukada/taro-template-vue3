@@ -1,0 +1,15 @@
+@font-face {
+  font-family: 'Source Han Sans CN-Bold';
+  src: url('https://digital-tec-pub.oss-cn-shanghai.aliyuncs.com/sky/e1b796b598b7461ca2112d51d8588913.ttf');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Source Han Sans CN-Medium';
+  src: url('https://digital-tec-pub.oss-cn-shanghai.aliyuncs.com/sky/4830b905df064a2299053624062ca06a.ttf');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Source Han Sans CN-Regular';
+  src: url('https://digital-tec-pub.oss-cn-shanghai.aliyuncs.com/sky/52a90726db9247d9a7d41b966490bfb2.ttf');
+  font-display: swap;
+}

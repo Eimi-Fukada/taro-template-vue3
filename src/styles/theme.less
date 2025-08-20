@@ -1,0 +1,36 @@
+// 框架内部样式使用了 Less 作为开发语言，并定义了一系列全局/组件的样式变量，你可以根据需求进行相应调整。
+@primary-color: #0ea1eb; // 全局主色
+@primary-bg-color: #ebf8ff; // 全局主色带透明度，做背景色用
+@link-color: #1890ff; // 链接色
+@success-color: #52c41a; // 成功色
+@warning-color: #faad14; // 警告色
+@error-color: #f5222d; // 错误色
+@font-size-base: 16px; // 主字号
+@heading-color: '#74A7F8'; // 标题色
+@text-color: rgba(0, 0, 0, 0.65); // 主文本色
+@text-color-secondary: rgba(0, 0, 0, 0.45); // 次文本色
+@disabled-color: rgba(0, 0, 0, 0.25); // 失效色
+@border-radius-base: 2px; // 组件/浮层圆角
+@border-color-base: #d9d9d9; // 边框色
+@box-shadow-base:
+  0 3px 6px -4px rgba(0, 0, 0, 0.12),
+  0 6px 16px 0 rgba(0, 0, 0, 0.08),
+  0 9px 28px 8px rgba(0, 0, 0, 0.05); // 浮层阴影
+
+// CSS 变量定义，可在任何组件中使用
+:root {
+  --primary-color: @primary-color;
+  --primary-bg-color: @primary-bg-color;
+  --link-color: @link-color;
+  --success-color: @success-color;
+  --warning-color: @warning-color;
+  --error-color: @error-color;
+  --font-size-base: @font-size-base;
+  --heading-color: @heading-color;
+  --text-color: @text-color;
+  --text-color-secondary: @text-color-secondary;
+  --disabled-color: @disabled-color;
+  --border-radius-base: @border-radius-base;
+  --border-color-base: @border-color-base;
+  --box-shadow-base: @box-shadow-base;
+}

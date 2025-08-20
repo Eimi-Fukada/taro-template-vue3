@@ -1,0 +1,300 @@
+---
+description: Vue 3.5 + Taro 开发规范
+globs: ["**/*.vue"]
+alwaysApply: true
+---
+
+# Vue 3.5 + Taro 开发规范
+
+## 组件结构规范
+
+### 1. 单文件组件结构
+```vue
+<template>
+  <!-- 使用 Taro 组件和 TailwindCSS -->
+  <view class="flex items-center justify-center">
+    <view :class="styles.container">
+      {{ content }}
+    </view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import styles from './index.module.less'
+import type { ComponentProps } from './types'
+
+// Props 定义（Vue 3.5 新语法）
+interface Props {
+  content: string
+  disabled?: boolean
+  size?: 'small' | 'medium' | 'large'
+  count?: number
+}
+
+const { content, disabled, size, count }= defineProps<Props>()
+
+// Emits 定义
+const emits = defineEmits<{
+  'on-click': [value: string]
+  'on-change': [value: number]
+}>()
+
+// 响应式数据
+const isVisible = ref(false)
+
+// 计算属性
+const computedValue = computed(() => {
+  return props.content.toUpperCase()
+})
+
+// 方法
+const handleClick = () => {
+  if (props.disabled) return
+  isVisible.value = !isVisible.value
+  emits('on-click', props.content)
+}
+</script>
+```
+
+### 2. 组件命名规范
+- **组件文件**: 使用 PascalCase，如 `ActionSheet.vue`、`Navigation.vue`
+- **组件目录**: 使用 camelCase，如 `actionSheet/`、`navigation/`
+- **组件注册**: 使用 PascalCase，如 `<ActionSheet />`
+
+### 3. Props 定义规范
+
+#### Vue 3.5 推荐语法
+```typescript
+// Vue 3.5 Props 定义
+interface Props {
+  // 必需属性
+  title: string
+  
+  // 可选属性
+  visible?: boolean
+  size?: 'small' | 'medium' | 'large'
+  count?: number
+  
+  // 复杂类型
+  items?: Array<{ id: string; name: string }>
+  config?: Record<string, any>
+}
+
+// 使用响应式 Props 解构设置默认值
+const { 
+  visible = false, 
+  size = 'medium', 
+  count = 0,
+  items = [],
+  config = {}
+} = defineProps<Props>()
+```
+
+#### 使用 defineModel 支持双向绑定
+```typescript
+// 推荐：使用 defineModel 替代 v-model 手动实现，不需要繁琐的 props 和 update:modelValue 语法
+const modelValue = defineModel<boolean>({ default: false })
+
+// 或者带选项的 defineModel
+const count = defineModel<number>('count', { default: 0 })
+
+// 使用方式
+// <Component v-model="visible" v-model:count="counter" />
+```
+- 禁止使用update:这类emit的方式，如果需要，请考虑使用 defineModel
+
+#### Props 验证规范
+```typescript
+// 对于需要运行时验证的场景
+const props = defineProps({
+  status: {
+    type: String as PropType<'success' | 'error' | 'warning'>,
+    default: 'success',
+    validator: (value: string) => ['success', 'error', 'warning'].includes(value)
+  },
+  count: {
+    type: Number,
+    default: 0,
+    validator: (value: number) => value >= 0
+  }
+})
+```
+
+### 4. Emits 定义规范
+```typescript
+// 类型安全的事件定义
+const emits = defineEmits<{
+  // 事件名: [参数类型]
+  'on-click': [event: MouseEvent]
+  'on-change': [value: string, oldValue: string]
+  'on-submit': [data: FormData]
+  'on-close': []  // 无参数事件
+}>()
+
+// 触发事件
+const handleClick = (event: MouseEvent) => {
+  emits('on-click', event)
+}
+```
+
+### 5. 响应式数据规范
+```typescript
+import { ref, reactive, computed, watch } from 'vue'
+
+// 基础响应式数据
+const count = ref(0)
+const isVisible = ref(false)
+const userInfo = ref<UserInfo | null>(null)
+
+// 响应式对象
+const state = reactive({
+  loading: false,
+  error: null as string | null,
+  data: [] as Item[]
+})
+
+// 计算属性
+const doubleCount = computed(() => count.value * 2)
+const hasData = computed(() => state.data.length > 0)
+
+// 监听器，尽可能使用 watchEffect 而不是 watch
+watchEffect(() => console.log(count.value))
+```
+
+### 6. 严格使用组合式API而不是选项式API
+
+## Taro 特定规范
+
+### 1. 组件使用规范
+```vue
+<template>
+  <!-- 优先使用 Taro 组件 -->
+  <view class="container">
+    <text class="title">{{ title }}</text>
+    <button @tap="handleClick">点击</button>
+    <scroll-view scroll-y class="scroll-area">
+      <view v-for="item in items" :key="item.id">
+        {{ item.name }}
+      </view>
+    </scroll-view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import Taro from '@tarojs/taro'
+
+// 使用 Taro API
+const handleClick = () => {
+  Taro.showToast({
+    title: '点击成功',
+    icon: 'success'
+  })
+}
+
+// 页面跳转
+const navigateTo = (url: string) => {
+  Taro.navigateTo({ url })
+}
+</script>
+```
+
+### 2. 事件处理规范
+```vue
+<template>
+  <!-- 使用 @tap 而不是 @click -->
+  <view @tap="handleTap">
+    <button @tap.stop="handleButtonTap">按钮</button>
+  </view>
+</template>
+
+<script setup lang="ts">
+// 事件处理函数
+const handleTap = (event: any) => {
+  console.log('view tapped', event)
+}
+
+const handleButtonTap = (event: any) => {
+  console.log('button tapped', event)
+  // 阻止事件冒泡已通过 .stop 修饰符处理
+}
+</script>
+```
+
+## 性能优化规范
+
+### 1. 计算属性缓存
+```typescript
+// 使用计算属性缓存复杂计算
+const expensiveValue = computed(() => {
+  return items.value
+    .filter(item => item.active)
+    .map(item => ({
+      ...item,
+      displayName: `${item.name} (${item.count})`
+    }))
+})
+```
+
+### 2. 条件渲染优化
+```vue
+<template>
+  <!-- 使用 v-show 处理频繁切换 -->
+  <view v-show="isVisible" class="modal">
+    模态框内容
+  </view>
+  
+  <!-- 使用 v-if 处理条件渲染 -->
+  <view v-if="hasPermission" class="admin-panel">
+    管理员面板
+  </view>
+</template>
+```
+
+### 3. 列表渲染优化
+```vue
+<template>
+  <!-- 使用 key 优化列表渲染 -->
+  <view v-for="item in items" :key="item.id" class="list-item">
+    {{ item.name }}
+  </view>
+  
+  <!-- 滚动组件（大数据量） -->
+  <scroll-view 
+    scroll-y 
+  >
+    <view v-for="item in visibleItems" :key="item.id">
+      {{ item.name }}
+    </view>
+  </scroll-view>
+</template>
+```
+
+## 最佳实践
+
+### 1. 组件拆分原则
+- 单个组件不超过 200 行代码
+- 单一职责，功能内聚
+- 可复用性考虑
+
+### 2. 状态管理
+- 简单状态使用 ref/reactive
+- 复杂状态使用 Pinia
+- 避免过度状态提升
+
+### 3. 类型安全
+- 所有 Props 必须定义类型
+- 使用 TypeScript 严格模式
+- 避免使用 any 类型
+
+### 4. 代码组织
+- 相关逻辑就近放置
+- 使用 composables 抽离复用逻辑
+- 保持代码简洁易读
+
+## 注意事项
+
+1. **平台差异**: 注意不同平台的 API 和样式差异
+2. **性能考虑**: 小程序对包大小和性能要求较高
+3. **用户体验**: 考虑加载状态和错误处理
+4. **可维护性**: 保持代码结构清晰，注释完整

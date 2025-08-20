@@ -1,0 +1,26 @@
+stages:
+  - build
+  - deploy
+
+build_job:
+  stage: build
+  only:
+    - main
+  script:
+    - npm install # 安装项目依赖
+    - npm run build # 执行构建命令
+  artifacts:
+    paths:
+      - dist # 将构建生成的dist目录作为构建产物
+  when: manual # 设置作业为手动触发
+
+deploy_job:
+  stage: deploy
+  dependencies:
+    - build_job # 确保构建作业完成后才执行部署作业
+  only:
+    - main # 也可以列出其他你希望触发此作业的分支
+  script:
+    # 在这里编写你的部署脚本，例如将dist目录部署到服务器
+    -  # deploy script
+  when: manual

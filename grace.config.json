@@ -1,0 +1,18 @@
+{
+  "organization": "sky",
+  "language": "vue",
+  "needJumpers": true,
+  "jumpersServerAddress": "36.137.111.113",
+  "jumpersServerHost": 56354,
+  "jumpersServerUsername": "wuxiang",
+  "jumpersServerPassword": "WUxiang890!@#",
+  "serverAddress": "172.16.202.2",
+  "serverHost": 56354,
+  "serverUsername": "wuxiang",
+  "serverPassword": "Sky3#2@1!",
+  "serverUploadPath": "nursing/dist",
+  "env": "dev",
+  "buildCommand": "yarn build",
+  "buildPath": "dist",
+  "version": "1.0.0"
+}

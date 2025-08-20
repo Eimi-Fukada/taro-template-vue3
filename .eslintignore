@@ -1,0 +1,4 @@
+.husky/*
+config/**
+node_modules/*
+dist/**

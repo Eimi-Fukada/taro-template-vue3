@@ -1,0 +1,121 @@
+.page {
+  background-color: #fff;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  min-height: 160px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+// 标题区域
+.header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+  flex: 1;
+}
+
+.closeIcon {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:active {
+    opacity: 0.6;
+  }
+}
+
+.closeImage {
+  width: 16px;
+  height: 16px;
+}
+
+// 内容区域
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px;
+}
+
+.itemList {
+  padding: 0;
+}
+
+.item {
+  padding: 12px 20px;
+  font-size: 16px;
+  color: #333;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &.active {
+    background-color: var(--primary-bg-color);
+    color: var(--primary-color);
+    border-radius: 12px;
+  }
+
+  &.disabled {
+    color: #ccc;
+    cursor: not-allowed;
+
+    &:active {
+      background-color: transparent;
+    }
+  }
+}
+
+.cancelButton {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+}
+
+.btn {
+  text-align: center;
+  background-color: var(--primary-color);
+  border-radius: 20px;
+  color: #fff;
+  font-size: 16px;
+  padding: 8px 80px;
+}
+
+// css module环境下，vue的transition动画类名被模块化处理了，需要使用:global()修饰符包裹
+:global(.slide-enter-active),
+:global(.slide-leave-active) {
+  transition: transform 0.2s ease-out;
+}
+
+:global(.slide-enter-from),
+:global(.slide-leave-to) {
+  transform: translateY(100%);
+}
+
+:global(.slide-enter-to),
+:global(.slide-leave-from) {
+  transform: translateY(0);
+}

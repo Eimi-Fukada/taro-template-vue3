@@ -1,0 +1,184 @@
+---
+description: TypeScript 5.9 开发规范
+globs: ["**/*.ts", "**/*.tsx", "**/*.vue"]
+alwaysApply: true
+---
+
+# TypeScript 5.9 开发规范
+
+
+## 类型定义规范
+
+### 1. 接口 vs 类型别名
+```typescript
+// ✅ 优先使用 interface 定义对象类型
+interface User {
+  readonly id: string
+  name: string
+  email: string
+  age?: number
+  createdAt: Date
+}
+
+// ✅ 使用 type 定义联合类型、工具类型、函数类型
+type Status = 'pending' | 'success' | 'error'
+type EventHandler<T = void> = (event: T) => void
+type ApiFunction<TParams, TResponse> = (params: TParams) => Promise<TResponse>
+
+// ✅ 接口可以扩展和合并
+interface User {
+  updatedAt?: Date // 接口合并
+}
+
+interface AdminUser extends User {
+  permissions: string[]
+}
+```
+
+### 2. 组件 Props 类型定义
+```typescript
+// types.ts - 组件类型定义文件
+export interface ComponentProps {
+  // 必需属性
+  title: string
+  
+  // 可选属性
+  visible?: boolean
+  size?: 'small' | 'medium' | 'large'
+  disabled?: boolean
+  
+  // 复杂类型
+  items?: readonly Item[]
+  config?: Readonly<Record<string, unknown>>
+  
+  // 事件处理器
+  onClose?: () => void
+  onChange?: (value: string, oldValue: string) => void
+}
+
+// 导出相关类型
+export type ComponentSize = ComponentProps['size']
+export type ComponentEvent = NonNullable<ComponentProps['onChange']>
+
+// Vue 3.5 组件中使用响应式 Props 解构设置默认值
+// 在组件内部：
+// const { visible = false, size = 'medium', disabled = false } = defineProps<ComponentProps>()
+```
+
+### 3. 常量定义
+```typescript
+// const.ts - 常量和 Props 定义
+export const COMPONENT_SIZES = ['small', 'medium', 'large'] as const
+export type ComponentSize = typeof COMPONENT_SIZES[number]
+```
+
+## 严格类型检查规范
+
+### 1. 空值安全
+```typescript
+// ✅ 安全的属性访问
+function getUserName(user: User | null): string {
+  if (!user) return 'Unknown'
+  return user.name
+}
+
+// ✅ 使用可选链和空值合并
+const userName = user?.profile?.name ?? 'Anonymous'
+const userAge = user?.age ?? 0
+```
+
+### 2. 数组和对象的不可变性
+```typescript
+// ✅ 使用 readonly 修饰符
+interface Config {
+  readonly apiUrl: string
+  readonly timeout: number
+  readonly features: readonly string[]
+  readonly endpoints: Readonly<Record<string, string>>
+}
+
+// ✅ 使用 as const 创建字面量类型
+const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE'] as const
+type HttpMethod = typeof HTTP_METHODS[number]
+
+// ✅ 函数参数使用 readonly
+function processItems<T>(items: readonly T[]): readonly T[] {
+  return items.filter(item => isValid(item))
+}
+```
+
+### 3. 索引访问安全
+```typescript
+// ✅ 安全的对象属性访问
+function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
+  return obj[key]
+}
+
+// ✅ 使用 Record 确保完整性
+const statusMessages: Record<Status, string> = {
+  pending: '处理中',
+  success: '成功',
+  error: '失败'
+}
+
+// ✅ 安全的数组访问（TypeScript 5.9 特性）
+function getArrayItem<T>(arr: readonly T[], index: number): T | undefined {
+  return arr.at(index) // 使用 at() 方法更安全
+}
+```
+
+## 泛型和工具类型
+
+### 1. 泛型约束
+```typescript
+// ✅ 基础泛型约束
+interface Identifiable {
+  readonly id: string
+}
+
+function updateEntity<T extends Identifiable>(
+  entity: T,
+  updates: Partial<Omit<T, 'id'>>
+): T {
+  return { ...entity, ...updates }
+}
+
+// ✅ 条件类型
+type NonNullable<T> = T extends null | undefined ? never : T
+type ApiResult<T> = T extends string ? { message: T } : { data: T }
+```
+
+### 2. 实用工具类型
+```typescript
+// ✅ 基于现有类型创建新类型
+interface User {
+  id: string
+  name: string
+  email: string
+  password: string
+  createdAt: Date
+}
+
+// 创建用户请求（排除 id 和 createdAt）
+type CreateUserRequest = Omit<User, 'id' | 'createdAt'>
+
+// 更新用户请求（可选字段，排除 id）
+type UpdateUserRequest = Partial<Omit<User, 'id'>>
+
+// 公开用户信息（排除敏感字段）
+type PublicUser = Omit<User, 'password'>
+
+// 用户摘要信息
+type UserSummary = Pick<User, 'id' | 'name' | 'email'>
+```
+
+## 注意事项
+
+1. **严格模式**: 始终启用 TypeScript 严格模式
+2. **类型安全**: 避免使用 `any`，优先使用 `unknown`
+3. **不可变性**: 使用 `readonly` 和 `const assertions`
+4. **类型收窄**: 使用类型守卫和类型断言
+5. **泛型约束**: 合理使用泛型约束提高类型安全
+6. **工具类型**: 充分利用 TypeScript 内置工具类型
+7. **错误处理**: 使用 Result 类型模式处理错误
+8. **性能考虑**: 使用 `const enum` 和类型导入优化性能
