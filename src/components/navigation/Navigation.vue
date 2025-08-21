@@ -4,7 +4,9 @@
       :class="styles.fixed"
       :style="{
         paddingTop: contentPaddingTop + 'px',
-        backgroundColor: `rgba(255, 255, 255, ${bgOpacity})`,
+        backgroundColor: bgColor
+          ? bgColor
+          : `rgba(255, 255, 255, ${bgOpacity})`,
       }"
     >
       <view :class="styles.content" :style="{ height: stateHeigth + 'px' }">
@@ -33,7 +35,7 @@ import { computed, ref, useSlots } from 'vue'
 import Taro, {
   getCurrentPages,
   getMenuButtonBoundingClientRect,
-  getSystemInfoSync,
+  getWindowInfo,
 } from '@tarojs/taro'
 import styles from './index.module.less'
 import images from '~/assets/icon-image/images'
@@ -45,6 +47,7 @@ const {
   backVisible = true,
   place = true,
   bgOpacity = 1,
+  bgColor,
 } = defineProps<NavigationProps>()
 
 const slots = useSlots()
@@ -52,7 +55,7 @@ const hasLeftSlotContent = computed(() => !!slots.left)
 
 const isWeapp = process.env.TARO_ENV === 'weapp'
 // h5暂时不支持 API getMenuButtonBoundingClientRect, 模拟导航栏iphone6/7/8固定高度
-const statusBarHeight = isWeapp ? getSystemInfoSync().statusBarHeight || 20 : 20
+const statusBarHeight = isWeapp ? getWindowInfo().statusBarHeight || 20 : 20
 
 const menuButtonBoundingClientRect = isWeapp
   ? getMenuButtonBoundingClientRect()

@@ -21,4 +21,9 @@ export interface NavigationProps {
    * @default 1
    */
   bgOpacity?: number
+  /**
+   * 背景颜色
+   * @default #fff
+   */
+  bgColor?: string
 }
