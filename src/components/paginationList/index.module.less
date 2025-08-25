@@ -4,7 +4,7 @@
 
 // 下拉刷新区域
 .pullRefresh {
-  @apply w-full bg-gray-50 overflow-hidden transition-all duration-200;
+  @apply w-full overflow-hidden transition-all duration-200;
 }
 
 .pullRefreshContent {
@@ -41,13 +41,13 @@
 }
 
 .spinner {
-  @apply w-3 h-3 border-2 border-solid border-t-transparent rounded-full animate-spin;
-  border-color: var(--primary-color);
-  border-top-color: transparent;
+  @apply w-5 h-5 border-2 border-solid rounded-full animate-spin;
+  border-color: var(--primary-loading-bg-color);
+  border-top-color: var(--primary-color);
 }
 
 .loadingText {
-  @apply text-sm text-gray-400 font-medium;
+  @apply text-sm text-gray-400;
 }
 
 .loadMoreTip {
