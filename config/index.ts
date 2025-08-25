@@ -71,6 +71,9 @@ const config = {
         })
       )
     },
+    miniCssExtractPluginOption: {
+      ignoreOrder: true,
+    },
     postcss: {
       pxtransform: {
         enable: true,
@@ -126,6 +129,7 @@ const config = {
     miniCssExtractPluginOption: {
       filename: 'css/[name].[hash].css',
       chunkFilename: 'css/[name].[chunkhash].css',
+      ignoreOrder: true,
     },
     postcss: {
       pxtransform: {
