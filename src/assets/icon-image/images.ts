@@ -11,6 +11,7 @@ const images = {
   [IconImageName.UnStar]: require('./images/unStar.webp'),
   [IconImageName.Close]: require('./images/close.png'),
   [IconImageName.Empty]: require('./images/empty.webp'),
+  [IconImageName.Home]: require('./images/home.webp'),
 }
 
 export default images

@@ -9,6 +9,7 @@ enum IconImageName {
   UnStar = 'unStar',
   Close = 'close',
   Empty = 'empty',
+  Home = 'home',
 }
 
 export default IconImageName
