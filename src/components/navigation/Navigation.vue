@@ -18,8 +18,16 @@
         >
           <image :src="images.left" :class="styles.leftIcon" />
         </view>
-        <view v-else :class="styles.goback" @click="hanldeNavHome">
-          <image :src="images.home" :class="styles.leftIcon" />
+        <view
+          v-if="canShowHomeIcon"
+          :class="styles.goback"
+          @click="hanldeNavHome"
+        >
+          <image
+            :src="images.home"
+            :class="styles.leftIcon"
+            style="width: 24px"
+          />
         </view>
         <!-- 左侧内容插槽 -->
         <view v-if="slots.left" :class="styles.leftSlot">
@@ -82,6 +90,10 @@ const contentPaddingTop = ref(isWeapp ? statusBarHeight : 0)
 
 const canShowLeftIcon = computed(
   () => backVisible && getCurrentPages().length > 1 && !hasLeftSlotContent.value
+)
+const canShowHomeIcon = computed(
+  () =>
+    backVisible && getCurrentPages().length === 1 && !hasLeftSlotContent.value
 )
 
 function hanldeNavBack() {
