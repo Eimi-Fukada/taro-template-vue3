@@ -1,7 +1,8 @@
 <template>
   <view :class="styles.page">
     <textarea
-      v-model="value"
+      :value="value"
+      @input="handleInput"
       :class="styles.textarea"
       :auto-height="autoHeight"
       :maxlength="maxLength"
@@ -36,4 +37,8 @@ const relHeight = computed(() => {
   }
   return `${height}px`
 })
+
+const handleInput = (e) => {
+  value.value = e.detail.value
+}
 </script>
