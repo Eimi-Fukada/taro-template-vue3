@@ -38,6 +38,10 @@ export interface PaginationListProps<T = any> {
   readonly debounceDelay?: number
   /** 高度，如果不传会导致scroll-view无法触发触底事件，如果组件内部托管会增加复杂度，需要开发者自己传递 */
   readonly height: number | string
+  /** 自定义空状态图片 */
+  readonly emptyImage?: string
+  /** 是否自动请求 */
+  readonly autoFetch?: boolean
 }
 
 /**

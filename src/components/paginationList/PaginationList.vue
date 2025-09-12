@@ -88,7 +88,11 @@
 
       <view v-else :class="styles.empty">
         <slot name="empty">
-          <image :src="images.empty" :class="styles.empty_image" />
+          <image
+            :src="emptyImage || images.empty"
+            :class="styles.empty_image"
+            mode="aspectFit"
+          />
           <text :class="styles.emptyText">{{ emptyText }}</text>
         </slot>
       </view>
@@ -119,10 +123,12 @@ const {
   pageSize = 10,
   lowerThreshold = 80,
   emptyText = '暂无数据',
+  emptyImage,
   noMoreText = '没有更多数据了',
   enableRefresh = true,
   debounceDelay = 300,
   height,
+  autoFetch = true,
 } = defineProps<PaginationListProps<T>>()
 
 // 使用分页 Hook
@@ -244,7 +250,9 @@ const handleScrollToLower = async (): Promise<void> => {
 
 // 组件挂载时加载首页数据
 onMounted(async () => {
-  await refresh()
+  if (autoFetch) {
+    await refresh()
+  }
 })
 
 // 暴露方法给父组件
