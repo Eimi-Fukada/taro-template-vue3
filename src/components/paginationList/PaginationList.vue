@@ -31,7 +31,6 @@
       :scroll-y="true"
       enhanced
       :lower-threshold="lowerThreshold"
-      :scroll-top="scrollTop"
       :style="scrollViewStyle"
       @scroll="handleScroll"
       @scrolltolower="handleScrollToLower"
