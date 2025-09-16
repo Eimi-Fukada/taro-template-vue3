@@ -1,7 +1,7 @@
 <template>
   <view :class="styles.page">
     <textarea
-      :value="value"
+      :value="modelValue"
       @input="handleInput"
       :class="styles.textarea"
       :auto-height="autoHeight"
@@ -9,7 +9,9 @@
       :placeholder="placeholder"
       :style="{ height: relHeight, minHeight: `${minHeight}px` }"
     />
-    <view :class="styles.showCount">{{ value.length }}/{{ maxLength }}</view>
+    <view :class="styles.showCount">
+      {{ modelValue.length }}/{{ maxLength }}
+    </view>
   </view>
 </template>
 
@@ -28,7 +30,7 @@ const {
 } = defineProps<TextAreaProps>()
 
 // 使用 defineModel 实现双向绑定
-const value = defineModel<string>('value', { default: '' })
+const modelValue = defineModel<string>('value', { default: '' })
 
 // 计算实际高度
 const relHeight = computed(() => {
@@ -39,6 +41,11 @@ const relHeight = computed(() => {
 })
 
 const handleInput = (e) => {
-  value.value = e.detail.value
+  let value = e.detail.value
+  if (maxLength && value.length > maxLength) {
+    value = value.slice(0, maxLength)
+  }
+
+  modelValue.value = value
 }
 </script>
