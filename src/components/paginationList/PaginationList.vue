@@ -28,7 +28,7 @@
 
     <scroll-view
       :class="styles.scrollView"
-      scroll-y
+      :scroll-y="true"
       enhanced
       :lower-threshold="lowerThreshold"
       :scroll-top="scrollTop"
