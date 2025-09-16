@@ -152,7 +152,7 @@ const scrollViewStyle = computed(() => {
 // 下拉刷新相关状态
 const pullRefreshVisible = ref(false)
 const pullRefreshHeight = ref(0)
-const scrollTop = ref(0)
+// const scrollTop = ref(0)
 
 // 触摸相关状态
 const touchStartY = ref(0)
@@ -184,7 +184,7 @@ const handleTouchMove = (event: TouchEvent) => {
   const deltaY = touchMoveY.value - touchStartY.value
 
   // 只有在顶部且向下拉时才触发下拉刷新
-  if (scrollTop.value <= 0 && deltaY > 0) {
+  if (deltaY > 0) {
     event.preventDefault()
     isPulling.value = true
 
@@ -227,11 +227,11 @@ const hidePullRefresh = () => {
 }
 
 // 处理滚动事件
-const handleScroll = (event: any) => {
-  scrollTop.value = event.detail.scrollTop
+const handleScroll = () => {
+  // scrollTop.value = event.detail.scrollTop
 
   // 如果正在下拉刷新过程中滚动了，取消下拉刷新
-  if (isPulling.value && scrollTop.value > 0) {
+  if (isPulling.value) {
     isPulling.value = false
     handleRefresh()
   }
