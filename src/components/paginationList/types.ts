@@ -67,11 +67,40 @@ export interface PaginationState<T = any> {
 }
 
 /**
+ * 数据项 ID 类型
+ */
+export type ItemId = string | number
+
+/**
+ * 搜索配置
+ */
+export interface SearchConfig {
+  /** 搜索关键词 */
+  readonly keyword: string
+  /** 搜索字段，如果不指定则搜索所有字段 */
+  readonly fields?: readonly string[]
+  /** 是否区分大小写，默认 false */
+  readonly caseSensitive?: boolean
+}
+
+/**
+ * 排序配置
+ */
+export interface SortConfig<T = any> {
+  /** 排序字段 */
+  readonly field: keyof T
+  /** 排序方向 */
+  readonly order: 'asc' | 'desc'
+}
+
+/**
  * usePaginationList Hook 返回值
  */
 export interface UsePaginationListReturn<T = any> {
   /** 分页状态 */
   readonly state: Readonly<PaginationState<T>>
+
+  // 基础分页操作
   /** 刷新数据 */
   readonly refresh: () => Promise<void>
   /** 加载更多数据 */
@@ -80,13 +109,48 @@ export interface UsePaginationListReturn<T = any> {
   readonly retry: () => Promise<void>
   /** 重置状态 */
   readonly reset: () => void
+
+  // CRUD 操作
+  /** 删除单个数据项 */
+  readonly removeItem: (id: ItemId) => void
+  /** 批量删除数据项 */
+  readonly removeItems: (ids: readonly ItemId[]) => void
+  /** 更新单个数据项 */
+  readonly updateItem: (id: ItemId, updates: Partial<T>) => void
+  /** 批量更新数据项 */
+  readonly updateItems: (
+    updates: Array<{ readonly id: ItemId; readonly data: Partial<T> }>
+  ) => void
+  /** 替换单个数据项 */
+  readonly replaceItem: (id: ItemId, item: T) => void
+
+  // 查询操作
+  /** 搜索数据项 */
+  readonly searchItems: (config: SearchConfig) => readonly T[]
+  /** 筛选数据项 */
+  readonly filterItems: (predicate: (item: T) => boolean) => readonly T[]
+  /** 排序数据项 */
+  readonly sortItems: (config: SortConfig<T>) => void
+  /** 查找数据项 */
+  readonly findItem: (predicate: (item: T) => boolean) => T | undefined
+  /** 根据 ID 查找数据项 */
+  readonly findItemById: (id: ItemId) => T | undefined
+
+  // 工具方法
+  /** 获取数据项的 ID */
+  readonly getItemId: (item: T) => ItemId
+  /** 清空列表 */
+  readonly clearList: () => void
+  /** 获取列表统计信息 */
+  readonly getStats: () => {
+    readonly total: number
+    readonly currentPage: number
+    readonly hasMore: boolean
+    readonly isEmpty: boolean
+  }
 }
 
 /**
- * 错误类型枚举
+ * 错误类型
  */
-export const enum ErrorType {
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  FETCH_ERROR = 'FETCH_ERROR',
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
-}
+export type ErrorType = 'NETWORK_ERROR' | 'FETCH_ERROR' | 'UNKNOWN_ERROR'

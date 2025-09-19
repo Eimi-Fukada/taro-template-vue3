@@ -131,13 +131,34 @@ const {
 } = defineProps<PaginationListProps<T>>()
 
 // 使用分页 Hook
-const { state, refresh, loadMore, retry, reset } = usePaginationList<T>(
-  fetchData,
-  {
-    pageSize,
-    debounceDelay,
-  }
-)
+const {
+  state,
+  refresh,
+  loadMore,
+  retry,
+  reset,
+  // CRUD 操作
+  removeItem,
+  removeItems,
+  updateItem,
+  updateItems,
+  replaceItem,
+
+  // 查询操作
+  searchItems,
+  filterItems,
+  sortItems,
+  findItem,
+  findItemById,
+
+  // 工具方法
+  getItemId,
+  clearList,
+  getStats,
+} = usePaginationList<T>(fetchData, {
+  pageSize,
+  debounceDelay,
+})
 
 // 计算 scroll-view 的样式
 const scrollViewStyle = computed(() => {
@@ -261,5 +282,23 @@ defineExpose({
   retry,
   reset,
   state,
+  // CRUD 操作
+  removeItem,
+  removeItems,
+  updateItem,
+  updateItems,
+  replaceItem,
+
+  // 查询操作
+  searchItems,
+  filterItems,
+  sortItems,
+  findItem,
+  findItemById,
+
+  // 工具方法
+  getItemId,
+  clearList,
+  getStats,
 })
 </script>
