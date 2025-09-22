@@ -4,6 +4,67 @@ import { apiUrl } from '../config'
 import { HttpStatus } from './enum'
 import Taro from '@tarojs/taro'
 
+// 创建请求队列管理
+class RequestQueue {
+  private static instance: RequestQueue
+  private queue: Array<any> = []
+  private isProcessing = false
+
+  private constructor() {}
+
+  static getInstance(): RequestQueue {
+    if (!RequestQueue.instance) {
+      RequestQueue.instance = new RequestQueue()
+    }
+    return RequestQueue.instance
+  }
+
+  add(requestConfig: any) {
+    this.queue.push(requestConfig)
+  }
+
+  clear() {
+    this.queue = []
+  }
+
+  async process() {
+    if (this.isProcessing || this.queue.length === 0) {
+      return
+    }
+
+    this.isProcessing = true
+    const request = this.queue.shift()
+
+    try {
+      // 重新发起请求
+      const response = await Taro.request({
+        ...request,
+        header: {
+          ...request.header,
+          Authorization: 'Bearer ' + Taro.getStorageSync('Authorization'),
+        },
+      })
+
+      // 如果有回调函数，则执行回调
+      if (request.success) {
+        request.success(response)
+      }
+    } catch (error) {
+      if (request.fail) {
+        request.fail(error)
+      }
+    } finally {
+      this.isProcessing = false
+      // 继续处理队列中的其他请求
+      if (this.queue.length > 0) {
+        setTimeout(() => this.process(), 0)
+      }
+    }
+  }
+}
+
+const requestQueue = RequestQueue.getInstance()
+
 const interceptors = [
   urlArgs.request.onFulfilled,
   Taro.interceptors.timeoutInterceptor,
@@ -36,6 +97,8 @@ export interface RequestConfig extends Taro.request.Option<unknown, string> {
   // url为必填项
   url: NonNullable<Taro.request.Option<unknown, string>['url']>
   args?: Record<string, unknown>
+  // 添加重试标识，避免重复加入队列
+  retry?: boolean
 }
 
 /**
@@ -111,6 +174,14 @@ const makeRequest: MakeRequest = <T>(config: RequestConfig) => {
       const { result, resultMessage, ...remainData } = res
       if (result === HttpStatus.authenticate) {
         Taro.removeStorageSync(`x-token`)
+        // 将当前请求加入重试队列（避免重复添加）
+        if (!mergedConfig.retry) {
+          requestQueue.add({
+            ...mergedConfig,
+            retry: true,
+          })
+        }
+
         return {
           err: { code: result, message: resultMessage },
           data: remainData,
@@ -132,6 +203,11 @@ const makeRequest: MakeRequest = <T>(config: RequestConfig) => {
       return { err, data: null, response: null }
     }
   }
+}
+
+// 登录成功后调用此函数处理重试队列
+export const processPendingRequests = () => {
+  requestQueue.process()
 }
 
 export default makeRequest
