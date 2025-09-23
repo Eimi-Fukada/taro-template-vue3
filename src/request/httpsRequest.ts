@@ -7,7 +7,7 @@ import Taro from '@tarojs/taro'
 // 创建请求队列管理
 class RequestQueue {
   private static instance: RequestQueue
-  private queue: Array<any> = []
+  private queue: Array<() => Promise<void>> = [] // ✅ 存函数，而不是 config
   private isProcessing = false
 
   private constructor() {}
@@ -19,8 +19,9 @@ class RequestQueue {
     return RequestQueue.instance
   }
 
-  add(requestConfig: any) {
-    this.queue.push(requestConfig)
+  add(task: () => Promise<void>) {
+    // ✅ 接收函数
+    this.queue.push(task)
   }
 
   clear() {
@@ -33,29 +34,16 @@ class RequestQueue {
     }
 
     this.isProcessing = true
-    const request = this.queue.shift()
+    const task = this.queue.shift()
 
     try {
-      // 重新发起请求
-      const response = await Taro.request({
-        ...request,
-        header: {
-          ...request.header,
-          Authorization: 'Bearer ' + Taro.getStorageSync('Authorization'),
-        },
-      })
-
-      // 如果有回调函数，则执行回调
-      if (request.success) {
-        request.success(response)
+      if (task) {
+        await task() // ✅ 执行函数（会重新触发 setData）
       }
     } catch (error) {
-      if (request.fail) {
-        request.fail(error)
-      }
+      console.error('重试请求失败:', error)
     } finally {
       this.isProcessing = false
-      // 继续处理队列中的其他请求
       if (this.queue.length > 0) {
         setTimeout(() => this.process(), 0)
       }
@@ -170,17 +158,23 @@ const makeRequest: MakeRequest = <T>(config: RequestConfig) => {
       const response: Taro.request.SuccessCallbackResult<
         BackendResultFormat<T>
       > = await Taro.request<BackendResultFormat<T>>(mergedConfig)
+
       const res = response.data
       const { result, resultMessage, ...remainData } = res
+
       if (result === HttpStatus.authenticate) {
         Taro.removeStorageSync(`x-token`)
-        // 将当前请求加入重试队列（避免重复添加）
+
+        // ✅ 把一个可执行的函数存进队列，而不是 config
         if (!mergedConfig.retry) {
-          requestQueue.add({
-            ...mergedConfig,
-            retry: true,
+          requestQueue.add(async () => {
+            await makeRequest<T>({ ...config, retry: true })(requestConfig)
           })
         }
+
+        Taro.navigateTo({
+          url: '/pages/login/index',
+        })
 
         return {
           err: { code: result, message: resultMessage },
@@ -194,6 +188,7 @@ const makeRequest: MakeRequest = <T>(config: RequestConfig) => {
           response,
         }
       }
+
       return {
         err: null,
         data: remainData,
