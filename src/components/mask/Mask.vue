@@ -7,9 +7,15 @@
       v-if="mask"
       :class="styles.Modal_mask"
       catch-move
-      @tap="handleClick"
+      @tap.stop="handleClick"
+      @touchmove.stop.prevent="handleTouchMove"
     />
-    <view :class="styles.Modal_content" catch-move>
+    <view
+      :class="styles.Modal_content"
+      catch-move
+      @touchmove.stop.prevent="handleTouchMove"
+      @tap.stop
+    >
       <slot />
     </view>
   </view>
@@ -32,7 +38,14 @@ const emits = defineEmits<{
   'on-close': []
 }>()
 
-const handleClick = () => {
+const handleTouchMove = (e) => {
+  // 阻止触摸移动事件冒泡和默认行为
+  e.stopPropagation()
+  e.preventDefault()
+}
+
+const handleClick = (event) => {
+  event.stopPropagation()
   if (maskClosable) {
     emits('on-close')
   }
