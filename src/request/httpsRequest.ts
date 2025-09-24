@@ -9,6 +9,7 @@ class RequestQueue {
   private static instance: RequestQueue
   private queue: Array<() => Promise<void>> = [] // ✅ 存函数，而不是 config
   private isProcessing = false
+  private hasPendingLogin = false
 
   private constructor() {}
 
@@ -47,6 +48,18 @@ class RequestQueue {
       if (this.queue.length > 0) {
         setTimeout(() => this.process(), 0)
       }
+    }
+  }
+
+  navigateToLogin() {
+    if (!this.hasPendingLogin) {
+      this.hasPendingLogin = true // 标记为已跳转
+      Taro.navigateTo({
+        url: '/pages/login/index',
+        success: () => {
+          this.hasPendingLogin = false // 跳转完成后重置标记
+        },
+      })
     }
   }
 }
@@ -172,9 +185,7 @@ const makeRequest: MakeRequest = <T>(config: RequestConfig) => {
           })
         }
 
-        Taro.navigateTo({
-          url: '/pages/login/index',
-        })
+        requestQueue.navigateToLogin()
 
         return {
           err: { code: result, message: resultMessage },
