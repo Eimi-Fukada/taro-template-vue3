@@ -1,4 +1,7 @@
-import Taro from '@tarojs/taro'
+import Taro, {
+  getMenuButtonBoundingClientRect,
+  getWindowInfo,
+} from '@tarojs/taro'
 
 /**
  * 生成唯一标识符
@@ -126,4 +129,41 @@ export function isPhone(str: string) {
  */
 export function encryptPhone(phone: string) {
   return phone.substr(0, 4) + '****' + phone.substr(7)
+}
+
+/**
+ * 获取胶囊高度
+ */
+export const getMenuButtonBoundingClientHeight = () => {
+  const statusBarHeight = getWindowInfo().statusBarHeight || 20
+  const stateHeigth =
+    (getMenuButtonBoundingClientRect().top - statusBarHeight) * 2 +
+    getMenuButtonBoundingClientRect().height
+  return stateHeigth + statusBarHeight
+}
+
+/**
+ * 平滑滚动到指定元素
+ * @param selector - 元素选择器，例如 '#target_image2'
+ * @param duration - 滚动动画时长（默认 300ms）
+ *
+ * ✅ 注意事项：
+ * - 在调用前确保该元素已渲染在页面中。
+ * - 若需在吸顶 Tab 下滚动到元素，请根据实际吸顶高度适当加上 offset。
+ */
+export function scrollToTarget(selector: string, duration = 300) {
+  const query = Taro.createSelectorQuery()
+  query
+    .select(selector)
+    .boundingClientRect((rect) => {
+      if (rect) {
+        Taro.pageScrollTo({
+          selector,
+          duration,
+        })
+      } else {
+        console.warn(`[scrollToTarget] 找不到元素 ${selector}`)
+      }
+    })
+    .exec()
 }
