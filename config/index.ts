@@ -4,8 +4,8 @@ import ComponentsPlugin from 'unplugin-vue-components/webpack'
 import NutUIResolver from '@nutui/auto-import-resolver'
 
 const config = {
-  projectName: 'skyTaroTemplate',
-  date: '2024-3-28',
+  projectName: 'TaroTemplate',
+  date: '2025-10-28',
   designWidth(input) {
     // 配置 NutUI 375 尺寸
     if (input?.file?.replace(/\\+/g, '/').indexOf('@nutui') > -1) {
@@ -114,7 +114,7 @@ const config = {
         })
       )
     },
-    esnextModules: ['taro-ui'],
+    // esnextModules: ['taro-ui'],
     publicPath: '/',
     staticDirectory: 'static',
     // h5 打包带上hash值

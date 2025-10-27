@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import 'taro-ui/dist/style/index.scss'
+import '@nutui/nutui-taro/dist/style.css'
 import { Skeleton } from '@nutui/nutui-taro'
 import './app.less'
 
