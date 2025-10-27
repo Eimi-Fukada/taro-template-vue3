@@ -1,5 +1,5 @@
 export default defineAppConfig({
-  pages: ['pages/index/index', 'pages/mine/index'],
+  pages: ['pages/index/index', 'pages/mine/index', 'pages/eventChannel/index'],
   subPackages: [],
   window: {
     backgroundTextStyle: 'light',

@@ -6,6 +6,7 @@
         {{ state.count }}
       </view>
       <Button type="primary" @tap="increment">click</Button>
+      <Button type="primary" @tap="handleEventChannel">事件通信</Button>
     </view>
   </viewContainer>
 </template>
@@ -17,5 +18,5 @@ import styles from './index.module.less'
 import { useViewModel } from './viewModel.ts'
 import { Button } from '@tarojs/components'
 
-const { state, increment } = useViewModel()
+const { state, increment, handleEventChannel } = useViewModel()
 </script>
