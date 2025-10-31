@@ -11,7 +11,7 @@ module.exports = {
       // 转化的单位,可以变成 px / rpx
       transformUnit: 'px',
       // postcss-rem-to-responsive-pixel@6 版本添加了 disabled 参数，用来禁止插件的转化
-      // disabled: process.env.TARO_ENV === 'h5' || process.env.TARO_ENV === 'rn'
+      disabled: process.env.TARO_ENV !== 'h5',
     },
     'postcss-px-to-viewport-8-plugin': {
       unitToConvert: 'px', //需要转换的单位，默认为"px"

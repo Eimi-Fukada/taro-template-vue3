@@ -8,49 +8,44 @@ module.exports = {
   corePlugins: {
     // 小程序不需要 preflight，因为这主要是给 h5 的，如果你要同时开发多端，你应该使用 process.env.TARO_ENV 环境变量来控制它
     preflight: false,
+    // 在小程序端禁用某些不支持的 CSS 特性
+    transform: process.env.TARO_ENV === 'h5',
+    backdropBlur: process.env.TARO_ENV === 'h5',
   },
   theme: {
     extend: {
       colors: {
-        // Add your custom colors
-        'main-text': '#000000',
-        'sub-text': '#28231B',
-        'sub-text1': '#525459',
-        'sub-text2': '#757880',
-        'card-content': 'rgb(22,33,60)',
-        'green-color': '#00B578',
-        'yellow-color': '#FFB400',
-        'gray-color': 'rgb(86,97,118)',
-        'primary-color': '#0D5DFD',
+        primary: 'var(--primary-color, #ff852c)',
+        'primary-bg': 'var(--primary-bg-color, #ebf8ff)',
+        'primary-loading':
+          'var(--primary-loading-bg-color, rgba(14, 161, 235, 0.3))',
 
-        'placeholder-color': '#AFB3BE',
-        'border-color': '#D1D4DA',
-        'divider-color': '#EEEEEE',
+        // 功能色
+        link: 'var(--link-color, #1890ff)',
+        success: 'var(--success-color, #52c41a)',
+        warning: 'var(--warning-color, #faad14)',
+        error: 'var(--error-color, #f5222d)',
 
-        'main-bg': '#F5F5F5',
-        'card-bg': '#FFFFFF',
-        'tag-bg': '#E5EEFF', // 新增，标签背景色
-        'tag-bg2': '#DEF7EF',
-        'tag-bg3': '#E9EBEF',
-        'tag-bg4': '#EBF4FF',
-        'tag-bg5': '#DFF7F7',
-        'tag-color': '#2DB1B5',
+        // 文本色
+        heading: 'var(--heading-color, #74A7F8)',
+        text: 'var(--text-color, #ffffff)',
+        'text-secondary': 'var(--text-color-secondary, rgba(0, 0, 0, 0.45))',
+        disabled: 'var(--disabled-color, rgba(0, 0, 0, 0.25))',
 
-        // 长者照护服务页面专用颜色
-        'elder-primary': '#003780', // 主要文字颜色
-        'elder-secondary': '#757880', // 次要文字颜色
-        'elder-gradient-start': '#e5ffeb', // 统计卡片渐变开始色
-        'elder-gradient-end': '#e6f7ff', // 统计卡片渐变结束色
-        'elder-icon-gradient-start': '#2db1b5', // 功能图标渐变开始色
-        'elder-icon-gradient-end': '#41e8c6', // 功能图标渐变结束色
-
-        // 新增健康数据相关颜色
-        'red-danger': '#DC3545', // 红色危险色
-        'green-success': '#00B578', // 绿色成功色
-        'orange-light': '#FCECE8', // 浅橙色背景
-
-        // 评估记录组件专用颜色
-        'assessment-bg': '#e1f5f5',
+        // 边框色
+        border: 'var(--border-color-base, #d9d9d9)',
+      },
+      // 字体大小 - 映射 theme.less 中的字体变量
+      fontSize: {
+        base: 'var(--font-size-base, 18px)',
+      },
+      // 圆角 - 映射 theme.less 中的圆角变量
+      borderRadius: {
+        base: 'var(--border-radius-base, 4px)',
+      },
+      // 阴影 - 映射 theme.less 中的阴影变量
+      boxShadow: {
+        base: 'var(--box-shadow-base, 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05))',
       },
       fontFamily: {
         'han-bold': [
