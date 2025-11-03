@@ -1,5 +1,5 @@
 <template>
-  <view v-if="!hasError">
+  <view v-if="!hasError" class="h-full flex flex-col">
     <slot />
     <view v-if="isTab" class="tabHeight" />
     <view v-if="isNewIphone && !noPlace" class="spacingIphone" />
