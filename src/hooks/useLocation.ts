@@ -4,7 +4,7 @@ import { ref } from 'vue'
 interface LocationResult {
   latitude: number
   longitude: number
-  district: string
+  district?: string
   error?: string
 }
 
@@ -28,7 +28,6 @@ export const useLocation = (isHighAccuracy: boolean = false) => {
         location.value = {
           latitude: res.latitude,
           longitude: res.longitude,
-          district: res.district || '高新区',
         }
         error.value = null
       },

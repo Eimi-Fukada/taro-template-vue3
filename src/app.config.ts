@@ -30,5 +30,11 @@ export default defineAppConfig({
   lazyCodeLoading: 'requiredComponents',
   __usePrivacyCheck__: true,
   // requiredBackgroundModes: ['audio'],
+  // requiredPrivateInfos: ['getLocation'],
+  // permission: {
+  //   'scope.userLocation': {
+  //     desc: '你的位置信息将用于小程序位置接口的效果展示',
+  //   },
+  // },
   debug: true,
 })
