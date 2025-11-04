@@ -6,6 +6,7 @@ export default defineAppConfig({
     navigationBarBackgroundColor: '#fff',
     navigationBarTitleText: 'WeChat',
     navigationBarTextStyle: 'black',
+    navigationStyle: 'custom',
   },
   tabBar: {
     color: '#000',
@@ -27,4 +28,7 @@ export default defineAppConfig({
     ],
   },
   lazyCodeLoading: 'requiredComponents',
+  __usePrivacyCheck__: true,
+  // requiredBackgroundModes: ['audio'],
+  debug: true,
 })

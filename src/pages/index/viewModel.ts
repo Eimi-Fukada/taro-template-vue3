@@ -1,10 +1,11 @@
 import { reactive, onMounted } from 'vue'
-import Taro from '@tarojs/taro'
+import Taro, { usePageScroll } from '@tarojs/taro'
 
 export const useViewModel = () => {
   const state = reactive({
     // 你的响应式状态和数据
     count: 0,
+    scrollOpacity: 0,
   })
 
   const increment = () => {
@@ -27,6 +28,10 @@ export const useViewModel = () => {
       },
     })
   }
+
+  usePageScroll((res) => {
+    state.scrollOpacity = Math.min(res.scrollTop / 100, 1)
+  })
 
   // you can write your mounted function
   onMounted(() => {})

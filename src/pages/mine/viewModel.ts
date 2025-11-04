@@ -6,7 +6,21 @@ export const useViewModel = () => {
     count: 0,
   })
 
+  const handleNavigateToMiniProgram = () => {
+    Taro.navigateToMiniProgram({
+      appId: '',
+      path: '',
+      extraData: {},
+      envVersion: 'release',
+      fail(res) {
+        // Taro.showToast({ title: res.errMsg || '跳转失败', icon: 'none' })
+        console.log('fail===', res)
+      },
+    })
+  }
+
   return {
     state,
+    handleNavigateToMiniProgram,
   }
 }

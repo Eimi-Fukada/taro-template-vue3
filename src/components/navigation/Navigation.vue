@@ -34,7 +34,8 @@
           <slot name="left"></slot>
         </view>
         <view :class="styles.title">
-          {{ title }}
+          <template v-if="title">{{ title }}</template>
+          <slot v-else name="title"></slot>
         </view>
       </view>
     </view>

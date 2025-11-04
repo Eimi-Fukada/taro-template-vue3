@@ -1,6 +1,6 @@
 <template>
   <viewContainer>
-    <Navigation title="首页" />
+    <Navigation title="首页" :bg-opacity="state.scrollOpacity" />
     <view :class="styles.page">
       <view class="text-[#000] text-[24px]">
         {{ state.count }}
