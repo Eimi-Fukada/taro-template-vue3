@@ -14,6 +14,8 @@ interface StorageDTO {
   password: string
   /** headImg */
   headImg: string
+  /** token */
+  Authorization: string
 }
 
 type StorageKey = keyof StorageDTO

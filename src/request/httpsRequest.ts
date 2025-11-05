@@ -3,6 +3,7 @@ import urlArgs from './interceptors'
 import { apiUrl } from '../config'
 import { HttpStatus } from './enum'
 import Taro from '@tarojs/taro'
+import { getItem, removeItem } from '~/globalStorage'
 
 // 创建请求队列管理
 class RequestQueue {
@@ -163,7 +164,7 @@ const makeRequest: MakeRequest = <T>(config: RequestConfig) => {
         ...requestConfig?.header,
         'x-tenant-code': xTenantCode,
         'x-system-code': 'cus_font',
-        'x-token': Taro.getStorageSync('x-token'),
+        Authorization: getItem('Authorization'),
       },
     }
     // 统一处理返回类型
@@ -176,16 +177,17 @@ const makeRequest: MakeRequest = <T>(config: RequestConfig) => {
       const { result, resultMessage, ...remainData } = res
 
       if (result === HttpStatus.authenticate) {
-        Taro.removeStorageSync(`x-token`)
+        removeItem(`Authorization`)
+        Taro.reLaunch({ url: '/pages/index/index' })
 
         // ✅ 把一个可执行的函数存进队列，而不是 config
-        if (!mergedConfig.retry) {
-          requestQueue.add(async () => {
-            await makeRequest<T>({ ...config, retry: true })(requestConfig)
-          })
-        }
+        // if (!mergedConfig.retry) {
+        //   requestQueue.add(async () => {
+        //     await makeRequest<T>({ ...config, retry: true })(requestConfig)
+        //   })
+        // }
 
-        requestQueue.navigateToLogin()
+        // requestQueue.navigateToLogin()
 
         return {
           err: { code: result, message: resultMessage },
