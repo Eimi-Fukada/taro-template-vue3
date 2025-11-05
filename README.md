@@ -345,13 +345,13 @@ import Taro from '@tarojs/taro'
 ### 分包命名规范
 
 1. **主包**：`src/pages` 目录下
-2. **普通分包**：`src/package-[功能名]` 格式，例如：
-   - `src/package-user` - 用户相关功能
-   - `src/package-order` - 订单相关功能
-   - `src/package-pay` - 支付相关功能
-3. **独立分包**：`src/independent-[功能名]` 格式，例如：
-   - `src/independent-login` - 登录独立分包
-   - `src/independent-help` - 帮助中心独立分包
+2. **普通分包**：`src/pages/package-[功能名]` 格式，例如：
+   - `src/pages/package-user` - 用户相关功能
+   - `src/pages/package-order` - 订单相关功能
+   - `src/pages/package-pay` - 支付相关功能
+3. **独立分包**：`src/pages/independent-[功能名]` 格式，例如：
+   - `src/pages/independent-login` - 登录独立分包
+   - `src/pages/independent-help` - 帮助中心独立分包
 
 ### 组件放置规范
 
