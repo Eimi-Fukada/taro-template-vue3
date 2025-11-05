@@ -32,7 +32,11 @@ const config = {
   },
   framework: 'vue3',
   // Taro3不用配置异步编程,所以每次编译H5都会报错，改成下面的配置
-  compiler: { type: 'webpack5', prebundle: { enable: false } },
+  compiler: {
+    type: 'webpack5',
+    // 仅 webpack5 支持依赖预编译配置
+    prebundle: { enable: true },
+  },
   cache: {
     enable: true, // Webpack 持久化缓存配置，建议开启。默认配置请参考：https://docs.taro.zone/docs/config-detail#cache
   },
@@ -97,6 +101,9 @@ const config = {
     },
     alias: {
       '~': path.resolve(__dirname, '../', 'src'),
+    },
+    optimizeMainPackage: {
+      enable: true,
     },
   },
   h5: {
