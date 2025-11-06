@@ -6,12 +6,12 @@ import { AppDirective } from './types'
  * @example
  * <button v-debounce:click="handleSubmit">提交</button>
  * <input v-debounce.500:input="handleInput" />
- * 不指定事件类型时默认监听 click
+ * 不指定事件类型时默认监听 tap
  * <div v-debounce="handleClick">点击区域</div>
  */
 export const vDebounce: AppDirective<(...args: any[]) => void> = {
   mounted(el, binding) {
-    const { arg: eventType = 'click', value: callback } = binding
+    const { arg: eventType = 'tap', value: callback } = binding
 
     if (typeof callback !== 'function') {
       console.warn('[v-debounce] 必须绑定函数')
@@ -28,7 +28,7 @@ export const vDebounce: AppDirective<(...args: any[]) => void> = {
   },
 
   unmounted(el, binding) {
-    const eventType = binding.arg || 'click'
+    const eventType = binding.arg || 'tap'
     const debouncedFn = (el as any)._debouncedFn
     if (debouncedFn) {
       el.removeEventListener(eventType, debouncedFn)
