@@ -41,7 +41,7 @@ const config = {
     enable: true, // Webpack 持久化缓存配置，建议开启。默认配置请参考：https://docs.taro.zone/docs/config-detail#cache
   },
   mini: {
-    webpackChain(chain) {
+    webpackChain(chain, webpack) {
       chain.merge({
         module: {
           rule: {
@@ -76,6 +76,15 @@ const config = {
           resolvers: [NutUIResolver({ taro: true })],
         })
       )
+
+      // ✅ 在这里注入 Vue 的编译期特性 flag
+      chain.plugin('define-vue-flags').use(webpack.DefinePlugin, [
+        {
+          __VUE_OPTIONS_API__: JSON.stringify(true),
+          __VUE_PROD_DEVTOOLS__: JSON.stringify(false),
+          __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
+        },
+      ])
     },
     miniCssExtractPluginOption: {
       ignoreOrder: true,

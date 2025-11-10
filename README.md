@@ -396,3 +396,8 @@ import Taro from '@tarojs/taro'
 - [Vue 3 官方文档](https://cn.vuejs.org/)
 - [TailwindCSS 官方文档](https://tailwindcss.com/)
 - [NutUI-Taro 官方文档](https://nutui.jd.com/taro)
+
+
+## ❤️ 升级项目
+1. 升级 Taro CLI 到最新版本：taro update self
+2. 升级 Taro 项目到最新版本：taro update project

@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, onErrorCaptured, ref } from 'vue'
+import { onErrorCaptured, ref } from 'vue'
 import images from '~/assets/icon-image/images'
 import { getisNewIphone } from '~/utils/help'
 import styles from './index.module.less'

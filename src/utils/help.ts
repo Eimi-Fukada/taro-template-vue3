@@ -85,7 +85,7 @@ export const CopyText = (text: string) => {
  ** 判断是否是有刘海屏的iPhone
  *
  * @export
- * @param {string} info 设备型号信息，Taro.getSystemInfoSync() | DeviceInfo.getDeviceId()(react-native-device-info库)
+ * @param {string} info 设备型号信息，Taro.getDeviceInfo() | DeviceInfo.getDeviceId()(react-native-device-info库)
  * @returns
  */
 export function judgmentNewPhone() {
@@ -101,7 +101,13 @@ export function judgmentNewPhone() {
  * @returns
  */
 export function getisNewIphone() {
-  const { model, screenWidth, screenHeight } = Taro.getSystemInfoSync()
+  // 获取设备基础信息
+  const deviceInfo = Taro.getDeviceInfo()
+  // 获取窗口信息用于判断屏幕尺寸
+  const windowInfo = Taro.getWindowInfo()
+
+  const model = deviceInfo.model
+  const { screenWidth, screenHeight } = windowInfo
 
   let isNewPhone = /(iPhone (X|11|12|13|14|15|16))|(unknown.*iPhone)/.test(
     model
