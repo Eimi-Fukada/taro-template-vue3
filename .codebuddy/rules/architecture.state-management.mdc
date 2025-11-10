@@ -1,0 +1,33 @@
+---
+description: 状态管理规范
+alwaysApply: true
+enabled: true
+updatedAt: 2025-11-10T03:26:02.671Z
+provider: Grace
+---
+
+### Store 分层
+| 层          | 位置                | 职责                  |
+|-------------|--------------------|----------------------|
+| Core        | `stores/core/`     | 基础状态（如用户信息）|
+| Module      | `stores/modules/`  | 业务模块状态          |
+| Temporary   | `stores/temp/`     | 页面级临时状态        |
+
+### 代码示例
+```typescript
+// stores/modules/trade.ts
+export const useTradeStore = defineStore('trade', () => {
+  // State 必须初始化类型
+  const orders = ref<Order[]>([])
+
+  // Action 必须处理错误
+  const fetchOrders = async () => {
+    try {
+      orders.value = await api.fetchOrders()
+    } catch (error) {
+      useToast().error('获取订单失败')
+    }
+  }
+
+  return { orders, fetchOrders }
+})

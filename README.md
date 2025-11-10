@@ -1,10 +1,10 @@
 # Taro Vue3 TypeScript 跨平台开发模板
 
-基于 Taro 4.1.5 + Vue 3.5.18 + TypeScript 5.9.2 的现代化跨平台开发模板，支持微信小程序、H5、支付宝小程序等多端部署。
+基于 Taro 4.1.8 + Vue 3.5.18 + TypeScript 5.9.2 的现代化跨平台开发模板，支持微信小程序、H5、支付宝小程序等多端部署。
 
 ## 🚀 技术栈
 
-- **框架**: Taro 4.1.5 + Vue 3.5.18
+- **框架**: Taro 4.1.8 + Vue 3.5.18
 - **语言**: TypeScript 5.9.2
 - **状态管理**: Pinia 3.0.3
 - **样式方案**: TailwindCSS 3.4.17 + Less + CSS Modules

@@ -1,9 +1,24 @@
 ---
-description: 
-globs:
+description: TailwindCSS 3.4.17 样式开发规范
 alwaysApply: true
+enabled: true
+updatedAt: 2025-11-10T03:25:27.892Z
+provider: Grace
 ---
-# Tailwind CSS 规则
+
+### 优先级矩阵
+| 场景                | 方案                | 示例                  |
+|---------------------|--------------------|----------------------|
+| 基础样式            | TailwindCSS        | `class="text-red-500"` |
+| 复杂组件            | CSS Modules + Less | `@import '@styles/vars'` |
+| 动态样式            | 内联 style + CSS Var| `style="--color: ${value}"` |
+
+### 禁用规则
+- 禁止使用 `!important`
+- 禁止超过 3 层嵌套选择器
+
+
+### 强制使用tailwind css 3.4.17 版本来开发样式
 
 - 使用响应式前缀实现移动优先设计：
 
@@ -49,3 +64,4 @@ alwaysApply: true
 ```
 
 - 统一的颜色管理，优先使用 [tailwind.config.js]中定义的颜色，如果没有则添加新的颜色
+

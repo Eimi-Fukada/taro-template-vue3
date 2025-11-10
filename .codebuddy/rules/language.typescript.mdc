@@ -1,11 +1,10 @@
 ---
 description: TypeScript 5.9 开发规范
-globs: ["**/*.ts", "**/*.tsx", "**/*.vue"]
 alwaysApply: true
+enabled: true
+updatedAt: 2025-11-10T03:25:17.785Z
+provider: Grace
 ---
-
-# TypeScript 5.9 开发规范
-
 
 ## 类型定义规范
 
@@ -41,16 +40,16 @@ interface AdminUser extends User {
 export interface ComponentProps {
   // 必需属性
   title: string
-  
+
   // 可选属性
   visible?: boolean
   size?: 'small' | 'medium' | 'large'
   disabled?: boolean
-  
+
   // 复杂类型
   items?: readonly Item[]
   config?: Readonly<Record<string, unknown>>
-  
+
   // 事件处理器
   onClose?: () => void
   onChange?: (value: string, oldValue: string) => void
@@ -61,8 +60,7 @@ export type ComponentSize = ComponentProps['size']
 export type ComponentEvent = NonNullable<ComponentProps['onChange']>
 
 // Vue 3.5 组件中使用响应式 Props 解构设置默认值
-// 在组件内部：
-// const { visible = false, size = 'medium', disabled = false } = defineProps<ComponentProps>()
+const { visible = false, size = 'medium', disabled = false } = defineProps<ComponentProps>()
 ```
 
 ### 3. 常量定义

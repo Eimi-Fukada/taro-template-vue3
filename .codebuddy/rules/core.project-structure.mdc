@@ -1,0 +1,106 @@
+---
+description: 项目目录结构与文件组织规范
+alwaysApply: true
+enabled: true
+updatedAt: 2025-11-10T03:24:40.073Z
+provider: Grace
+---
+
+# 项目目录结构规范
+
+## 项目概述
+这是一个使用 Taro 4.1.8 + Vue 3 + TypeScript + TailwindCSS + Pinia 开发的跨平台项目，支持微信小程序、H5、支付宝小程序等多端部署。
+
+## 技术栈
+- **框架**: Taro 4.1.8 + Vue 3.5.18
+- **语言**: TypeScript 5.9.2
+- **状态管理**: Pinia 3.0.3
+- **样式**: TailwindCSS 3.4.17 + Less
+- **UI组件**: NutUI-Taro 4.3.14
+- **构建工具**: Webpack 5 + Babel
+- **代码规范**: ESLint + Prettier + Stylelint + Commitlint
+
+## 核心目录
+```
+src/
+├── app.ts              # 应用入口文件
+├── app.config.ts       # 全局配置
+├── app.less           # 全局样式
+├── config.ts          # 应用配置
+├── globalStorage.ts   # 全局存储
+├── assets/            # 静态资源
+├── components/        # 公共组件
+├── directives/       # 自定义指令文件
+├── enums/            # 枚举定义
+├── hooks/            # 自定义 Hooks
+├── layout/           # 布局组件
+├── pages/            # 页面
+├── request/          # 网络请求
+├── router/           # 全局路由守卫和白名单
+├── stores/           # Pinia 状态管理
+├── utils/            # 工具函数
+└── styles/           # 样式文件
+```
+
+### 组件目录结构
+基于主流组件库最佳实践，每个组件应包含：
+```
+componentName/
+├── ComponentName.vue  # 主组件文件（PascalCase 命名）
+├── index.ts           # 导出文件（统一对外接口）
+├── types.ts           # 类型定义（接口契约）
+└── index.module.less  # 样式文件（可选，复杂样式）
+```
+
+**设计原理：**
+- **主流命名规范**：主组件使用 PascalCase，与 Element Plus、Ant Design Vue 等保持一致
+- **逻辑就近原则**：简单组件逻辑直接写在 `.vue` 文件中，避免过度工程化
+- **接口优先**：`types.ts` 定义组件契约，支持 API 设计先行
+- **统一导出**：`index.ts` 控制对外 API，支持按需加载和版本管理
+- **样式按需**：简单组件优先使用 TailwindCSS，复杂样式才使用 CSS Modules
+
+**逻辑抽离原则：**
+- 组件逻辑超过 50 行时，考虑抽离到单独的 `hooks.ts` 文件
+- 需要跨组件复用的逻辑，抽离到 `src/hooks/` 全局目录
+
+### 页面目录结构
+每个页面应包含：
+```
+pageName/
+├── index.vue          # 页面组件
+├── index.config.ts    # 页面配置
+├── viewModel.ts       # 页面逻辑（MVVM 的 ViewModel 层）
+├── types.ts           # 页面类型定义（可选）
+├── components/        # 页面专用组件（可选）
+└── index.module.less  # 页面样式（可选）
+```
+
+**设计原理：**
+- **MVVM 架构**：`viewModel.ts` 体现 ViewModel 层，处理页面业务逻辑
+- **业务逻辑分离**：将复杂的页面逻辑从组件中抽离，提高可维护性
+- **类型安全**：`types.ts` 定义页面相关的类型
+- **组件就近原则**：页面专用组件放在 `components/` 目录
+- **配置分离**：页面配置独立管理
+
+## 跨平台开发规范
+
+### 1. 平台兼容性
+- 使用 Taro 提供的 API 而非原生 API
+- 条件编译处理平台差异：
+```typescript
+// #ifdef H5
+import { showToast } from '@tarojs/taro'
+// #endif
+
+// #ifdef WEAPP
+import Taro from '@tarojs/taro'
+// #endif
+```
+
+### 2. 样式适配
+- TailwindCSS 配置已适配小程序
+- 避免使用不支持的 CSS 属性
+
+### 3. 组件使用
+- UI 组件库使用 NutUI-Taro
+- 自定义组件确保跨平台兼容

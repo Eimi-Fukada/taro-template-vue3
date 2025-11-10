@@ -1,0 +1,28 @@
+---
+description: 组件文档规范
+alwaysApply: true
+enabled: true
+updatedAt: 2025-11-10T03:25:50.412Z
+provider: Grace
+---
+
+### 组件分类
+1. **基础组件**
+   - 位置：`src/components/base/`
+   - 要求：零业务逻辑，支持全平台
+   - 示例：`Button.vue`, `Input.vue`
+
+2. **业务组件**
+   - 位置：`src/pages/components/business/`
+   - 要求：允许包含业务逻辑但不可耦合数据源
+
+### 组件契约
+```typescript
+// types.ts 必须包含
+export interface ComponentProps {
+  // 使用 TS 注释生成文档
+  /** 控制组件尺寸 */
+  size?: 'small' | 'medium' | 'large'
+  /** 是否禁用 */
+  disabled?: boolean
+}
