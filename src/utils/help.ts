@@ -173,3 +173,29 @@ export function scrollToTarget(selector: string, duration = 300) {
     })
     .exec()
 }
+
+/**
+ * 将秒数转换为分钟和秒的格式化字符串
+ * @param seconds - 总秒数
+ * @returns 格式化后的时间字符串 (例如: "02分00秒")
+ * @example
+ * formatTime(120) // 返回 "02分00秒"
+ * formatTime(65) // 返回 "01分05秒"
+ * formatTime(30) // 返回 "00分30秒"
+ */
+export const formatTime = (seconds: number): string => {
+  // 处理无效输入
+  if (isNaN(seconds) || seconds < 0) {
+    return '00分00秒'
+  }
+
+  // 计算分钟和秒数
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = Math.floor(seconds % 60)
+
+  // 格式化为两位数
+  const formattedMinutes = minutes.toString().padStart(2, '0')
+  const formattedSeconds = remainingSeconds.toString().padStart(2, '0')
+
+  return `${formattedMinutes}分${formattedSeconds}秒`
+}
