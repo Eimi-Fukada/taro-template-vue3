@@ -10,6 +10,9 @@ enum IconImageName {
   Close = 'close',
   Empty = 'empty',
   Home = 'home',
+  AudioClose = 'audioClose',
+  Pause = 'pause',
+  Play = 'play',
 }
 
 export default IconImageName

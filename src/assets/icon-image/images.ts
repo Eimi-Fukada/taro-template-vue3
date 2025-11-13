@@ -12,6 +12,9 @@ const images = {
   [IconImageName.Close]: require('./images/close.png'),
   [IconImageName.Empty]: require('./images/empty.webp'),
   [IconImageName.Home]: require('./images/home.webp'),
+  [IconImageName.AudioClose]: require('./images/audioClose.png'),
+  [IconImageName.Pause]: require('./images/pause.png'),
+  [IconImageName.Play]: require('./images/play.png'),
 }
 
 export default images

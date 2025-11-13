@@ -38,6 +38,56 @@ declare namespace Taro {
       params?: Record<string, unknown>
     }
   }
+
+  // 全局弹窗管理器类型声明
+  interface GlobalDialogManager {
+    /**
+     * 显示弹窗
+     */
+    show(options: {
+      content?: string
+      cancelText?: string
+      confirmText?: string
+      onConfirm?: () => void | Promise<void>
+      onCancel?: () => void
+    }): Promise<boolean>
+
+    /**
+     * 隐藏弹窗
+     */
+    hide(): void
+
+    /**
+     * 重置弹窗状态
+     */
+    reset(): void
+
+    /**
+     * 确认弹窗 - 简化版本
+     */
+    confirm(content: string, confirmText?: string): Promise<boolean>
+
+    /**
+     * 警告弹窗 - 简化版本
+     */
+    alert(content: string): Promise<boolean>
+
+    /**
+     * 获取当前状态
+     */
+    getState(): {
+      visible: boolean
+      content: string
+      confirmText: string
+      onConfirm?: () => void | Promise<void>
+      onCancel?: () => void
+    }
+  }
+
+  // 扩展Taro静态类，添加globalDialog属性
+  interface TaroStatic {
+    globalDialog: GlobalDialogManager
+  }
 }
 
 declare module '@tarojs/components' {

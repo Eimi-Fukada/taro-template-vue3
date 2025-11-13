@@ -1,0 +1,80 @@
+.page {
+  background-color: #fff;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: calc(100vw - 28px);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  color: #333333;
+  height: 44px;
+}
+
+.content {
+  padding: 24px 40px;
+}
+
+.text {
+  text-align: center;
+  font-weight: 400;
+  font-size: 16px;
+  color: #333333;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 40px;
+}
+
+.cancel {
+  flex: 1;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid #999999;
+  margin-right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: #999999;
+}
+
+.confirm {
+  flex: 1;
+  height: 38px;
+  background-color: #ff852c;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: #fff;
+}
+
+// css module环境下，vue的transition动画类名被模块化处理了，需要使用:global()修饰符包裹
+:global(.slide-enter-active),
+:global(.slide-leave-active) {
+  transition: transform 0.2s ease-out;
+}
+
+:global(.slide-enter-from),
+:global(.slide-leave-to) {
+  transform: translateY(100%);
+}
+
+:global(.slide-enter-to),
+:global(.slide-leave-from) {
+  transform: translateY(0);
+}

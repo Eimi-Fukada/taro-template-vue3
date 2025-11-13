@@ -1,8 +1,11 @@
 <template>
   <view v-if="!hasError" class="h-full flex flex-col">
     <slot />
+    <AudioPlayer />
     <view v-if="isTab" class="tabHeight" />
     <view v-if="isNewIphone && !noPlace" class="spacingIphone" />
+    <!-- 全局弹窗容器 -->
+    <GlobalDialogContainer />
   </view>
   <view v-else :class="styles.errorBox">
     <image :src="images.error" :class="styles.error" />
@@ -15,6 +18,8 @@ import { onErrorCaptured, ref } from 'vue'
 import images from '~/assets/icon-image/images'
 import { getisNewIphone } from '~/utils/help'
 import styles from './index.module.less'
+import { AudioPlayer } from '~/components'
+import GlobalDialogContainer from '~/components/alert/global-dialog/GlobalDialogContainer.vue'
 
 defineProps({
   // 底部是否需要垫高

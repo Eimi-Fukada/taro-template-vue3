@@ -8,6 +8,7 @@ import { getItem } from './globalStorage'
 import { requiresAuth } from './router/router'
 import Taro from '@tarojs/taro'
 import { setupGlobalRouterGuard } from './router/routerGuard'
+import { GlobalDialogPlugin } from './components/alert/global-dialog/globalDialog'
 
 const App = createApp({
   onLaunch() {
@@ -46,7 +47,7 @@ const App = createApp({
 })
 
 // 批量注册组件和插件
-const plugins = [Skeleton, createPinia()]
+const plugins = [Skeleton, createPinia(), GlobalDialogPlugin]
 
 plugins.forEach((plugin) => App.use(plugin))
 

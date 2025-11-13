@@ -42,3 +42,9 @@ export * from './paginationList'
 
 // 上传组件
 export * from './upload'
+
+// 音频播放组件
+export * from './audioPlayer'
+
+// 弹窗组件
+export * from './alert'
