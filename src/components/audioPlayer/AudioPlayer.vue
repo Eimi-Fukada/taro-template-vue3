@@ -9,9 +9,18 @@
       :inertia="true"
     >
       <view :class="styles.content">
-        <image :src="url" :class="[styles.courseImage, styles.slowerRotate]" />
-        <image :src="images.pause" :class="styles.audioIcon" />
-        <!-- <image :src="images.play" :class="styles.audioIcon" /> -->
+        <image
+          :src="url"
+          :class="[
+            styles.courseImage,
+            { [styles.slowerRotate]: state.isPlaying },
+          ]"
+        />
+        <image
+          :src="state.isPlaying ? images.pause : images.play"
+          :class="styles.audioIcon"
+          @tap="handlePlay"
+        />
         <image :src="images.audioClose" :class="styles.audioClose" />
       </view>
     </movable-view>
@@ -22,7 +31,7 @@
 import { MovableArea, MovableView } from '@tarojs/components'
 import styles from './index.module.less'
 import images from '~/assets/icon-image/images'
-import { onMounted, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import Taro from '@tarojs/taro'
 
 const url =
@@ -32,6 +41,13 @@ const position = ref({
   x: 200,
   y: 600,
 })
+const state = reactive({
+  isPlaying: false,
+})
+
+const handlePlay = () => {
+  state.isPlaying = !state.isPlaying
+}
 
 onMounted(() => {
   const windowInfo = Taro.getWindowInfo()
