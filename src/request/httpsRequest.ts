@@ -67,6 +67,7 @@ class RequestQueue {
 
 const requestQueue = RequestQueue.getInstance()
 
+const GLOBAL_TIMEOUT = 6 * 1000
 const interceptors = [
   urlArgs.request.onFulfilled,
   Taro.interceptors.timeoutInterceptor,
@@ -153,9 +154,9 @@ interface MakeRequest {
 const makeRequest: MakeRequest = <T>(config: RequestConfig) => {
   return async (requestConfig?: Partial<RequestConfig>) => {
     // 合并在service中定义的option和调用时从外部传入的option
-    const xTenantCode =
-      Taro.getStorageSync(`x-tenant-code`) || '788a35e64092b5fb'
+    const xTenantCode = Taro.getStorageSync(`x-tenant-code`) || ''
     const mergedConfig: RequestConfig = {
+      timeout: GLOBAL_TIMEOUT,
       ...config,
       ...requestConfig,
       url: apiUrl + config?.url,
