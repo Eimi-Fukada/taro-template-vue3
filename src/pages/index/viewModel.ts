@@ -1,5 +1,8 @@
-import { reactive, onMounted } from 'vue'
+import { reactive, onMounted, ref } from 'vue'
 import Taro, { usePageScroll } from '@tarojs/taro'
+import { FetchDataFunction, UsePaginationListReturn } from '~/components'
+import apis from '~/request'
+import { CoursesItemProps } from './type'
 
 export const useViewModel = () => {
   const state = reactive({
@@ -8,6 +11,22 @@ export const useViewModel = () => {
     scrollOpacity: 0,
   })
 
+  const listRef = ref<UsePaginationListReturn>()
+
+  const fetchData: FetchDataFunction<CoursesItemProps> = async (
+    page,
+    pageSize
+  ) => {
+    const { data } = await apis.get['/course/app/course/list']({
+      data: { pageSize, pageNum: page },
+    })
+
+    return {
+      list: data?.rows || [],
+      total: data?.total || 0,
+      hasMore: data?.hasNext || false,
+    }
+  }
   const increment = () => {
     state.count++
   }
@@ -40,5 +59,7 @@ export const useViewModel = () => {
     state,
     increment,
     handleEventChannel,
+    listRef,
+    fetchData,
   }
 }
