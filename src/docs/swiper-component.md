@@ -18,6 +18,8 @@ import CoursesSchedule from './components/CoursesSchedule.vue'
 import CoursesComment from './components/CoursesComment.vue'
 import CoursesRecommend from './components/CoursesRecommend.vue'
 
+const commentListRef = ref(null) as any
+
 // Swiper 配置数组 - 管理所有页面组件
 const SWIPER_CONFIG = computed(() => [
   // 简介
@@ -49,6 +51,7 @@ const SWIPER_CONFIG = computed(() => [
       maxLength: 500,
       showEmoji: true,
     },
+    ref: commentListRef,
   },
   // 相关推荐
   {
@@ -82,6 +85,7 @@ const SWIPER_CONFIG = computed(() => [
         <component 
           :is="config.component" 
           v-bind="config.props" 
+          :ref="(el) => config.ref && (config.ref.value = el)"
         />
       </scroll-view>
     </swiper-item>
