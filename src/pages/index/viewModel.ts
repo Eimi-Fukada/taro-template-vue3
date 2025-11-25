@@ -53,7 +53,10 @@ export const useViewModel = () => {
   })
 
   // you can write your mounted function
-  onMounted(() => {})
+  onMounted(() => {
+    // 示例：获取首页数据
+    listRef.value?.refresh()
+  })
 
   return {
     state,
