@@ -51,6 +51,11 @@ const SWIPER_CONFIG = computed(() => [
       maxLength: 500,
       showEmoji: true,
     },
+    events: {
+      // 注意这里的 onChange 事件名
+      // 子组件向外 emit 的是 change 事件，而不是 onChange
+      onChange: handleCommentChange,
+    },
     ref: commentListRef,
   },
   // 相关推荐
@@ -64,6 +69,14 @@ const SWIPER_CONFIG = computed(() => [
     },
   },
 ])
+
+onMounted(() => {
+  nextTick(() => {
+    if (commentListRef.value) {
+      commentListRef.value?.refresh()
+    }
+  })
+})
 ```
 
 #### 2. 模板使用
@@ -84,7 +97,7 @@ const SWIPER_CONFIG = computed(() => [
         <!-- 动态组件渲染，传递对应 props -->
         <component 
           :is="config.component" 
-          v-bind="config.props" 
+          v-bind="{ ...config.props, ...config.events }"
           :ref="(el) => config.ref && (config.ref.value = el)"
         />
       </scroll-view>
