@@ -19,7 +19,7 @@ import CoursesComment from './components/CoursesComment.vue'
 import CoursesRecommend from './components/CoursesRecommend.vue'
 
 // Swiper 配置数组 - 管理所有页面组件
-const SWIPER_CONFIG = [
+const SWIPER_CONFIG = computed(() => [
   // 简介
   {
     key: 'intro',
@@ -60,7 +60,7 @@ const SWIPER_CONFIG = [
       showRating: true,
     },
   },
-]
+])
 ```
 
 #### 2. 模板使用
