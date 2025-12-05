@@ -1,7 +1,4 @@
-import {
-  ChargeType,
-  OwnedStatus,
-} from '../category-list/components/courses-item/type'
+import { ChargeType, OwnedStatus } from '../index/type'
 
 export interface ChapterPlayUrl {
   /**

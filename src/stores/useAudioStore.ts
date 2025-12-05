@@ -582,6 +582,11 @@ export const useAudioStore = defineStore('audio', () => {
     }
   }
 
+  // 主动清除 lastError 状态，防止lastError 被设置后，不清除 → 播放器永久禁止播放
+  const clearError = () => {
+    playbackState.lastError = {}
+  }
+
   // 自动保存播放进度
   let lastSavedTime = 0
   watch(
@@ -625,5 +630,6 @@ export const useAudioStore = defineStore('audio', () => {
     stop,
     savePlaybackState,
     setDragging,
+    clearError,
   }
 })
