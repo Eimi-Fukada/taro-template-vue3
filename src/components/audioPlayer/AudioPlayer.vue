@@ -57,6 +57,7 @@ import { debounce } from 'es-toolkit'
 
 const { playlistState, playbackState, metadata, togglePlayPause } =
   useAudioStore()
+
 const { state, initPosition, updatePosition, close } = useAudioFloatStore()
 
 const handleToPlay = () => {

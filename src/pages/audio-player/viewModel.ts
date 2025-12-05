@@ -1,9 +1,10 @@
 import { useRouter } from '@tarojs/taro'
-import { onMounted, reactive, watch } from 'vue'
+import { onMounted, onUnmounted, reactive, watch } from 'vue'
 import apis from '~/request'
 import { ChapterDetail } from './type'
 import { useAudioStore } from '~/stores/useAudioStore'
 import { HttpStatus } from '~/request/enum'
+import { useAudioFloatStore } from '~/stores/useAudioFloatStore'
 
 export const useViewModel = () => {
   const state = reactive({
@@ -11,8 +12,10 @@ export const useViewModel = () => {
   })
 
   const routerParams = useRouter()?.params
-  const { playbackState, clearError, playChapter } = useAudioStore()
+
   const { globalDialog } = Taro
+  const { playbackState, clearError, playChapter } = useAudioStore()
+  const { hideForPage, showForPage } = useAudioFloatStore()
 
   const getData = async () => {
     const [chapterDetail] = await Promise.all([
@@ -47,6 +50,8 @@ export const useViewModel = () => {
   onMounted(() => {
     getData()
     handleLastError(playbackState.lastError)
+    // 进入播放页：强制隐藏浮窗
+    hideForPage()
   })
 
   watch(
@@ -55,6 +60,13 @@ export const useViewModel = () => {
       handleLastError(val)
     }
   )
+
+  onUnmounted(() => {
+    // 离开播放页：如果有播放中的音频，则显示浮窗，否则不显示
+    if (playbackState.isPlaying) {
+      showForPage()
+    }
+  })
 
   return {
     state,
