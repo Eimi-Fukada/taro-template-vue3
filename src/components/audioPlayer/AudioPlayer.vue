@@ -1,12 +1,17 @@
 <template>
-  <movable-area :class="styles.movable_area" id="global-audio-wrapper">
+  <movable-area
+    v-if="state.visible && !state.forceHide"
+    :class="styles.movable_area"
+    id="global-audio-wrapper"
+  >
     <movable-view
       direction="all"
       :class="styles.movable_view"
-      :x="position.x"
-      :y="position.y"
+      :x="state.position.x"
+      :y="state.position.y"
       :outOfBounds="false"
-      :inertia="true"
+      :inertia="false"
+      @change="handleChange"
     >
       <view :class="styles.content">
         <view
@@ -30,7 +35,11 @@
           :class="styles.audioIcon"
           @tap="togglePlayPause"
         />
-        <image :src="images.audioClose" :class="styles.audioClose" />
+        <image
+          :src="images.audioClose"
+          :class="styles.audioClose"
+          @tap="close"
+        />
       </view>
     </movable-view>
   </movable-area>
@@ -40,31 +49,38 @@
 import { MovableArea, MovableView } from '@tarojs/components'
 import styles from './index.module.less'
 import images from '~/assets/icon-image/images'
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import Taro from '@tarojs/taro'
 import { useAudioStore } from '~/stores/useAudioStore'
+import { useAudioFloatStore } from '~/stores/useAudioFloatStore'
+import { debounce } from 'es-toolkit'
 
 const { playlistState, playbackState, metadata, togglePlayPause } =
   useAudioStore()
-
-const position = ref({
-  x: 200,
-  y: 600,
-})
+const { state, initPosition, updatePosition, close } = useAudioFloatStore()
 
 const handleToPlay = () => {
-  // 直接进入播放
   Taro.navigateTo({
-    url: `/pages/audio-player/index?id=${playlistState.currentPlayingId}`,
+    url: `/pages/package-courses/audio-player/index?id=${playlistState.currentPlayingId}`,
   })
 }
 
-onMounted(() => {
-  const windowInfo = Taro.getWindowInfo()
-  const { screenWidth, screenHeight } = windowInfo
-  position.value = {
-    x: screenWidth - 166,
-    y: screenHeight - 140,
+/** 防抖更新位置（200ms） */
+const savePosDebounce = debounce((x: number, y: number) => {
+  updatePosition({ x, y })
+}, 200)
+
+/** movable-view 拖动监听 */
+const handleChange = (e) => {
+  const { x, y, source } = e.detail
+
+  // 只在用户拖动情况下保存位置
+  if (source === 'touch') {
+    savePosDebounce(x, y)
   }
+}
+
+onMounted(() => {
+  initPosition()
 })
 </script>
