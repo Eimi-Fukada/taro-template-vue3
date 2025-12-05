@@ -46,5 +46,8 @@ export * from './upload'
 // 音频播放组件
 export * from './audioPlayer'
 
+// 音频语音播放组件
+export * from './audioVoc'
+
 // 弹窗组件
 export * from './alert'

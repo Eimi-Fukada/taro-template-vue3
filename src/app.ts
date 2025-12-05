@@ -9,9 +9,17 @@ import { requiresAuth } from './router/router'
 import Taro from '@tarojs/taro'
 import { setupGlobalRouterGuard } from './router/routerGuard'
 import { GlobalDialogPlugin } from './components/alert/global-dialog/globalDialog'
+import { useAudioStore } from './stores/useAudioStore'
+
+const pinia = createPinia()
 
 const App = createApp({
   onLaunch() {
+    App.use(pinia)
+
+    const audioStore = useAudioStore()
+    audioStore.init()
+
     setupGlobalRouterGuard()
     /**
      * 保险起见，如果因为什么特殊的原因导致意外进入了未授权页面，这个时候可以通过这种方式解决物理返回死循环的问题
@@ -47,7 +55,7 @@ const App = createApp({
 })
 
 // 批量注册组件和插件
-const plugins = [Skeleton, createPinia(), GlobalDialogPlugin]
+const plugins = [Skeleton, GlobalDialogPlugin]
 
 plugins.forEach((plugin) => App.use(plugin))
 

@@ -58,3 +58,120 @@
   width: 18px;
   height: 18px;
 }
+
+.image-container {
+  width: 40px;
+  height: 40px;
+}
+
+/* 容器样式，确保不影响布局 */
+.bubbleEffect {
+  position: relative;
+  display: inline-block;
+  overflow: visible;
+  .image-container;
+}
+
+/* 气泡动画效果 */
+.bubbleEffect::before,
+.bubbleEffect::after {
+  content: '';
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 99;
+}
+
+.bubbleEffect::before {
+  background-image: radial-gradient(
+      circle at 30% 30%,
+      rgba(255, 133, 44, 0.9) 6px,
+      transparent 6px
+    ),
+    radial-gradient(
+      circle at 70% 40%,
+      rgba(255, 133, 44, 0.6) 3px,
+      transparent 4px
+    ),
+    radial-gradient(
+      circle at 40% 70%,
+      rgba(255, 133, 44, 0.7) 4px,
+      transparent 5px
+    ),
+    radial-gradient(
+      circle at 60% 20%,
+      rgba(255, 133, 44, 0.5) 3px,
+      transparent 4px
+    ),
+    radial-gradient(
+      circle at 20% 60%,
+      rgba(255, 133, 44, 0.6) 4px,
+      transparent 5px
+    );
+  animation: bubbleUp 2s ease-out infinite;
+}
+
+.bubbleEffect::after {
+  background-image: radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 133, 44, 0.8) 5px,
+      transparent 6px
+    ),
+    radial-gradient(
+      circle at 30% 70%,
+      rgba(255, 133, 44, 0.6) 3px,
+      transparent 4px
+    ),
+    radial-gradient(
+      circle at 70% 30%,
+      rgba(255, 133, 44, 0.7) 4px,
+      transparent 5px
+    ),
+    radial-gradient(
+      circle at 20% 40%,
+      rgba(255, 133, 44, 0.5) 3px,
+      transparent 4px
+    ),
+    radial-gradient(
+      circle at 80% 60%,
+      rgba(255, 133, 44, 0.6) 4px,
+      transparent 5px
+    );
+  animation: bubbleDown 2s ease-out infinite;
+  animation-delay: 1s; /* 延迟1秒，使上下气泡错开 */
+}
+
+@keyframes bubbleUp {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.1);
+  }
+  30% {
+    opacity: 0.8;
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.5);
+  }
+}
+
+@keyframes bubbleDown {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.1);
+  }
+  30% {
+    opacity: 0.8;
+    transform: translateY(10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.5);
+  }
+}

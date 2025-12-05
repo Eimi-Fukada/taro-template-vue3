@@ -9,17 +9,26 @@
       :inertia="true"
     >
       <view :class="styles.content">
+        <view
+          :class="
+            playbackState.isPlaying
+              ? styles.bubbleEffect
+              : styles['image-container']
+          "
+        >
+          <image
+            :src="metadata.coverImgUrl"
+            :class="[
+              styles.courseImage,
+              { [styles.slowerRotate]: playbackState.isPlaying },
+            ]"
+            @tap="handleToPlay"
+          />
+        </view>
         <image
-          :src="url"
-          :class="[
-            styles.courseImage,
-            { [styles.slowerRotate]: state.isPlaying },
-          ]"
-        />
-        <image
-          :src="state.isPlaying ? images.pause : images.play"
+          :src="playbackState.isPlaying ? images.pause : images.play"
           :class="styles.audioIcon"
-          @tap="handlePlay"
+          @tap="togglePlayPause"
         />
         <image :src="images.audioClose" :class="styles.audioClose" />
       </view>
@@ -31,22 +40,23 @@
 import { MovableArea, MovableView } from '@tarojs/components'
 import styles from './index.module.less'
 import images from '~/assets/icon-image/images'
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import Taro from '@tarojs/taro'
+import { useAudioStore } from '~/stores/useAudioStore'
 
-const url =
-  'https://img12.360buyimg.com/imagetools/jfs/t1/196430/38/8105/14329/60c806a4Ed506298a/e6de9fb7b8490f38.png'
+const { playlistState, playbackState, metadata, togglePlayPause } =
+  useAudioStore()
 
 const position = ref({
   x: 200,
   y: 600,
 })
-const state = reactive({
-  isPlaying: false,
-})
 
-const handlePlay = () => {
-  state.isPlaying = !state.isPlaying
+const handleToPlay = () => {
+  // 直接进入播放
+  Taro.navigateTo({
+    url: `/pages/audio-player/index?id=${playlistState.currentPlayingId}`,
+  })
 }
 
 onMounted(() => {

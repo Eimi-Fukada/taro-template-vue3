@@ -2,5 +2,6 @@
   "editor.tabSize": 2,
   "css.validate": true,
   "less.validate": true,
-  "less.lint.unknownAtRules": "ignore"
+  "less.lint.unknownAtRules": "ignore",
+  "codingcopilot.enableCompletionLanguage": {}
 }

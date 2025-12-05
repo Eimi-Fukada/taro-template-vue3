@@ -9,4 +9,8 @@ export const HttpStatus = {
   service_unavailable: 503,
   gateway_timeout: 504,
   unSupport_http: 505,
+  /**
+   * 当前章节收费,请先购买课程
+   */
+  chapter_code: 10002,
 }

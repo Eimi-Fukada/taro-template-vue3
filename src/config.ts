@@ -19,3 +19,9 @@ export const apiUrl = {
 
 // 没有token时候跳转的页面。如果开启了静默授权不会跳转
 export const loginUrl = '/login'
+
+/**
+ * 图片资源oss服务器基础 URL
+ */
+export const imageOssUrl =
+  'https://eos-dongguan-7.cmecloud.cn/digital-tec-pub-new'
