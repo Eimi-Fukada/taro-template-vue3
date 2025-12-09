@@ -441,7 +441,7 @@ export const useAudioStore = defineStore('audio', () => {
       )
       metadata.title = chapterDetail?.title || ''
       metadata.coverImgUrl = chapterDetail?.courseImageUrl || ''
-      metadata.chapterId = chapterId
+      metadata.chapterId = chapterDetail?.chapterId
       metadata.courseId = chapterDetail.courseId
 
       // 3. 设置音频源并播放

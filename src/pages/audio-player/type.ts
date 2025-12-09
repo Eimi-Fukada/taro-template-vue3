@@ -37,7 +37,7 @@ export interface ChapterDetail {
   /**
    * 章节ID
    */
-  chapterId?: number
+  chapterId: string
 
   /**
    * 课程ID
