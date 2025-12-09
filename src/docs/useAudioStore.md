@@ -15,130 +15,65 @@
 
 ## 异步架构设计原理
 
-### 宏任务与微任务分层架构
+### 宏任务与微任务分层机制
 
-```mermaid
-graph TB
-    subgraph "🔄 主线程事件循环"
-        subgraph "📋 宏任务队列 (Macrotask Queue)"
-            MT1[网络请求 API Calls]
-            MT2[定时器 Timer Events]
-            MT3[用户交互 User Events]
-            MT4[I/O 操作 Async I/O]
-        end
-        
-        subgraph "⚡ 微任务队列 (Microtask Queue)"
-            MI1[nextTick 回调]
-            MI2[Promise.then 处理]
-            MI3[MutationObserver]
-            MI4[响应式依赖更新]
-        end
-        
-        subgraph "🖥️ 渲染队列 (Render Queue)"
-            RQ1[DOM 更新]
-            RQ2[样式计算]
-            RQ3[布局重排]
-            RQ4[绘制重绘]
-        end
-    end
-    
-    subgraph "🎵 音频状态管理"
-        ASYNC_LAYER[异步状态层]
-        SYNC_LAYER[同步状态层]
-        REACTIVE_LAYER[响应式层]
-    end
-    
-    %% 数据流向
-    MT1 --> MI1
-    MT2 --> MI2
-    MT3 --> MI3
-    MT4 --> MI4
-    
-    MI1 --> ASYNC_LAYER
-    MI2 --> SYNC_LAYER
-    MI3 --> REACTIVE_LAYER
-    MI4 --> RQ1
-    
-    ASYNC_LAYER --> SYNC_LAYER
-    SYNC_LAYER --> REACTIVE_LAYER
-    
-    %% 样式定义
-    classDef macroTask fill:#ffecb3,stroke:#f57c00,color:#e65100
-    classDef microTask fill:#e8f5e8,stroke:#4caf50,color:#1b5e20
-    classDef render fill:#e3f2fd,stroke:#2196f3,color:#0d47a1
-    classDef audioState fill:#f3e5f5,stroke:#9c27b0,color:#4a148c
-    
-    class MT1,MT2,MT3,MT4 macroTask
-    class MI1,MI2,MI3,MI4 microTask
-    class RQ1,RQ2,RQ3,RQ4 render
-    class ASYNC_LAYER,SYNC_LAYER,REACTIVE_LAYER audioState
-```
+在 JavaScript 事件循环模型中，我们采用分层调度策略来解决音频播放中的性能问题：
+
+#### 宏任务队列 (Macrotask Queue)
+- **网络请求处理**：API 调用、资源加载等异步 I/O 操作
+- **定时器事件**：setTimeout、setInterval 等延时任务
+- **用户交互**：点击、滚动等 DOM 事件
+- **文件操作**：文件读写、本地存储等
+
+#### 微任务队列 (Microtask Queue) 
+- **响应式更新**：Vue 3 的依赖追踪与副作用执行
+- **Promise 回调**：then、catch、finally 处理
+- **nextTick 调度**：Vue 的异步 DOM 更新机制
+- **MutationObserver**：DOM 变化监听
+
+#### 渲染队列 (Render Queue)
+- **DOM 更新**：元素属性修改、节点增删
+- **样式计算**：CSS 解析与样式规则应用
+- **布局重排**：元素几何信息计算
+- **绘制重绘**：像素信息渲染到屏幕
+
+### 音频状态管理层级
+
+我们的音频状态管理分为三个层次：
+
+1. **异步状态层**：处理网络请求、数据获取等耗时操作
+2. **同步状态层**：管理播放列表、当前播放位置等实时状态
+3. **响应式层**：Vue 响应式系统，负责组件重渲染
+
+### 调度策略设计
+
+通过将网络请求等耗时操作放入宏任务队列，状态更新放入微任务队列，确保 UI 响应性不受阻塞。渲染任务在微任务执行完成后立即执行，保证用户界面的流畅性。
 
 ### 响应式数据流架构
 
-```mermaid
-graph LR
-    subgraph "📊 响应式数据层"
-        subgraph "🔍 Proxy 代理层"
-            PROXY1[Proxy.<PlaylistState>]
-            PROXY2[Proxy.<PlaybackState>]
-            PROXY3[Proxy.<AudioMetadata>]
-        end
-        
-        subgraph "📋 依赖追踪层"
-            DEP1[依赖收集器]
-            DEP2[副作用队列]
-            DEP3[调度器 Scheduler]
-        end
-        
-        subgraph "⚡ 执行层"
-            EXEC1[微任务执行]
-            EXEC2[批量更新]
-            EXEC3[组件重渲染]
-        end
-    end
-    
-    subgraph "🎵 音频事件源"
-        AUDIO_EVENTS[BackgroundAudioManager Events]
-        NATIVE_CALLBACKS[Native Callbacks]
-    end
-    
-    subgraph "💾 状态持久化"
-        LOCAL_STORAGE[LocalStorage Sync]
-        SERVER_SYNC[Server Async]
-    end
-    
-    %% 数据流连接
-    AUDIO_EVENTS --> PROXY1
-    NATIVE_CALLBACKS --> PROXY2
-    
-    PROXY1 --> DEP1
-    PROXY2 --> DEP2
-    PROXY3 --> DEP3
-    
-    DEP1 --> EXEC1
-    DEP2 --> EXEC2
-    DEP3 --> EXEC3
-    
-    EXEC1 --> LOCAL_STORAGE
-    EXEC2 --> SERVER_SYNC
-    
-    %% 反向依赖
-    EXEC3 -.-> PROXY3
-    
-    %% 样式设置
-    classDef proxyLayer fill:#fff3e0,stroke:#ff9800,color:#e65100
-    classDef depLayer fill:#e8f5e8,stroke:#4caf50,color:#1b5e20
-    classDef execLayer fill:#e3f2fd,stroke:#2196f3,color:#0d47a1
-    classDef audioSrc fill:#f3e5f5,stroke:#9c27b0,color:#4a148c
-    classDef storage fill:#fce4ec,stroke:#e91e63,color:#880e4f
-    
-    class PROXY1,PROXY2,PROXY3 proxyLayer
-    class DEP1,DEP2,DEP3 depLayer
-    class EXEC1,EXEC2,EXEC3 execLayer
-    class AUDIO_EVENTS,NATIVE_CALLBACKS audioSrc
-    class LOCAL_STORAGE,SERVER_SYNC storage
-```
+我们的响应式系统基于 Vue 3 的 Proxy 机制实现：
+
+#### Proxy 代理层
+使用 ES6 Proxy 对音频状态对象进行代理拦截，实现细粒度的属性访问控制：
+- `PlaylistState`：播放列表状态代理
+- `PlaybackState`：播放控制状态代理  
+- `AudioMetadata`：音频元数据代理
+
+#### 依赖追踪层
+Vue 3 的响应式系统自动追踪依赖关系：
+- **依赖收集器**：在组件渲染时自动收集使用的响应式数据
+- **副作用队列**：将状态变化对应的回调函数排队执行
+- **调度器**：统一调度副作用执行时机
+
+#### 执行层
+采用微任务优先的执行策略：
+- **微任务执行**：通过 Promise 微任务批量处理状态更新
+- **批量更新**：将多个状态变化合并为一次组件更新
+- **组件重渲染**：在所有状态更新完成后触发组件重新渲染
+
+### 数据流向设计
+
+音频播放事件触发后，通过 Proxy 代理拦截，进入依赖追踪系统，最终在执行层通过微任务批量处理更新。本地存储同步和服务器同步分别通过同步和异步方式执行，确保数据一致性。
 
 ### 微任务调度核心机制
 
@@ -191,76 +126,58 @@ manager.onTimeUpdate(() => {
 
 ### Event Bus vs Watch 架构取舍
 
-```mermaid
-graph TB
-    subgraph "📡 事件总线架构 (Event Bus Pattern)"
-        subgraph "优势"
-            EBA1[解耦性强]
-            EBA2[跨组件通信]
-            EBA3[事件驱动]
-            EBA4[异步处理]
-        end
-        
-        subgraph "劣势"
-            EBB1[调试困难]
-            EBB2[类型安全性低]
-            EBB3[事件风暴风险]
-            EBB4[内存泄漏隐患]
-        end
-        
-        subgraph "适用场景"
-            EBC1[高频进度更新]
-            EBC2[跨模块状态同步]
-            EBC3[第三方组件集成]
-        end
-    end
-    
-    subgraph "👀 Watch 监听架构 (Reactive Pattern)"
-        subgraph "优势"
-            WA1[类型安全]
-            WA2[调试友好]
-            WA3[依赖追踪]
-            WA4[自动清理]
-        end
-        
-        subgraph "劣势"
-            WB1[耦合度高]
-            WB2[性能开销]
-            WB3[循环依赖风险]
-            WB4[响应式复杂性]
-        end
-        
-        subgraph "适用场景"
-            WC1[状态持久化]
-            WC2[计算属性]
-            WC3[本地状态管理]
-        end
-    end
-    
-    subgraph "🎯 音频系统混合策略"
-        MIXED1[Event Bus: 高频播放事件]
-        MIXED2[Watch: 状态持久化]
-        MIXED3[Event Bus: 跨组件通信]
-        MIXED4[Watch: 元数据同步]
-    end
-    
-    %% 连接关系
-    EBA1 -.-> MIXED1
-    EBA2 -.-> MIXED3
-    WA1 -.-> MIXED2
-    WA2 -.-> MIXED4
-    
-    %% 样式设置
-    classDef eventBus fill:#e8f5e8,stroke:#4caf50,color:#1b5e20
-    classDef watch fill:#e3f2fd,stroke:#2196f3,color:#0d47a1
-    classDef mixed fill:#fff3e0,stroke:#ff9800,color:#e65100
-    
-    class EBA1,EBA2,EBA3,EBA4,EBC1,EBC2,EBC3 eventBus
-    class EBB1,EBB2,EBB3,EBB4 eventBus
-    class WA1,WA2,WA3,WA4,WC1,WC2,WC3 watch
-    class WB1,WB2,WB3,WB4 watch
-    class MIXED1,MIXED2,MIXED3,MIXED4 mixed
-```
+在音频状态管理中，我们需要在事件总线和响应式监听两种模式之间做出权衡：
+
+#### 事件总线架构 (Event Bus Pattern)
+
+**优势分析：**
+- **解耦性强**：组件间通过事件通信，避免直接依赖
+- **跨组件通信**：支持任意层级组件间的信息传递
+- **事件驱动**：符合发布订阅模式，扩展性好
+- **异步处理**：天然支持异步操作，不会阻塞执行流
+
+**劣势分析：**
+- **调试困难**：事件流难以追踪，问题定位复杂
+- **类型安全性低**：动态事件类型，缺少编译时检查
+- **事件风暴风险**：高频事件可能导致性能问题
+- **内存泄漏隐患**：事件监听器忘记清理会导致内存问题
+
+#### Watch 监听架构 (Reactive Pattern)
+
+**优势分析：**
+- **类型安全**：TypeScript 支持，编译时类型检查
+- **调试友好**：响应式依赖关系清晰，易于调试
+- **依赖追踪**：Vue 自动管理依赖关系，手动维护成本低
+- **自动清理**：组件卸载时自动清理响应式依赖
+
+**劣势分析：**
+- **耦合度高**：组件与状态对象直接耦合
+- **性能开销**：深度监听可能带来性能损耗
+- **循环依赖风险**：响应式数据间可能产生循环引用
+- **响应式复杂性**：复杂的响应式逻辑难以理解和维护
+
+#### 音频系统混合策略
+
+基于以上分析，我们采用混合策略来发挥两种模式的优势：
+
+**Event Bus 适用场景：**
+- **高频播放事件**：timeUpdate、progress 等高频事件
+- **跨模块状态同步**：播放器与播放列表间的状态同步
+- **第三方组件集成**：与外部组件或插件的通信
+
+**Watch 适用场景：**
+- **状态持久化**：播放进度、用户偏好的本地存储
+- **计算属性**：播放时长百分比、剩余时间等衍生数据
+- **本地状态管理**：组件内部状态的响应式管理
+
+### 混合架构设计原则
+
+1. **高频事件使用 Event Bus**：避免响应式系统性能损耗
+2. **状态持久化使用 Watch**：利用 Vue 的自动依赖管理
+3. **跨组件通信使用 Event Bus**：降低组件间耦合
+4. **元数据同步使用 Watch**：确保类型安全和可维护性
+
+通过这种混合策略，我们在保证性能的同时，也维持了良好的代码可维护性和扩展性。
 
 ### 混合架构实现策略
 
@@ -335,47 +252,63 @@ watch(
 
 ### 状态机流转架构
 
-```mermaid
-stateDiagram-v2
-    [*] --> IDLE: 初始化完成
-    
-    IDLE --> LOADING: playChapter()
-    LOADING --> PLAYING: onCanplay()
-    LOADING --> ERROR: onError()
-    
-    PLAYING --> PAUSED: pause()
-    PLAYING --> BUFFERING: onWaiting()
-    PLAYING --> ENDED: onEnded()
-    PLAYING --> ERROR: onError()
-    
-    PAUSED --> LOADING: playChapter()
-    PAUSED --> PLAYING: play()
-    
-    BUFFERING --> PLAYING: onCanplay()
-    BUFFERING --> ERROR: onError()
-    
-    ENDED --> LOADING: 自动下一首
-    ENDED --> IDLE: stop()
-    
-    ERROR --> LOADING: retry()
-    ERROR --> IDLE: clearError()
-    
-    IDLE --> DESTROYED: destroy()
-    ERROR --> DESTROYED: destroy()
-    
-    %% 状态持久化触发点
-    note right of PLAYING
-        微任务状态持久化
-        每5秒自动保存
-        服务器同步更新
-    end note
-    
-    note right of PAUSED
-        立即保存当前状态
-        断点续播记录
-        学习进度上报
-    end note
-```
+音频播放器采用有限状态机模式管理播放状态流转，确保状态转换的可控性和可预测性：
+
+#### 状态定义与流转逻辑
+
+**初始状态 (IDLE)**
+- 系统初始化完成，等待用户操作
+- 可通过 playChapter() 进入 LOADING 状态
+- 可通过 destroy() 进入 DESTROYED 状态
+
+**加载状态 (LOADING)**
+- 正在获取音频资源和元数据
+- 成功时通过 onCanplay() 进入 PLAYING 状态
+- 失败时通过 onError() 进入 ERROR 状态
+
+**播放状态 (PLAYING)**
+- 音频正在播放，核心工作状态
+- 状态持久化：每5秒自动保存，服务器同步更新
+- 可通过 pause() 进入 PAUSED 状态
+- 网络问题时通过 onWaiting() 进入 BUFFERING 状态
+- 播放结束时通过 onEnded() 进入 ENDED 状态
+- 错误时通过 onError() 进入 ERROR 状态
+
+**暂停状态 (PAUSED)**
+- 音频暂停，但保留播放上下文
+- 状态持久化：立即保存当前状态，断点续播记录，学习进度上报
+- 可通过 play() 返回 PLAYING 状态
+- 可通过 playChapter() 切换到新章节（进入 LOADING）
+
+**缓冲状态 (BUFFERING)**
+- 网络缓冲中，播放暂停
+- 缓冲完成时通过 onCanplay() 返回 PLAYING 状态
+- 缓冲失败时通过 onError() 进入 ERROR 状态
+
+**结束状态 (ENDED)**
+- 当前章节播放完成
+- 自动切换到下一章节（进入 LOADING 状态）
+- 或通过 stop() 进入 IDLE 状态
+
+**错误状态 (ERROR)**
+- 播放过程中发生错误
+- 可通过 retry() 重试（返回 LOADING 状态）
+- 可通过 clearError() 清除错误（返回 IDLE 状态）
+- 可通过 destroy() 销毁播放器（进入 DESTROYED 状态）
+
+**销毁状态 (DESTROYED)**
+- 播放器资源已释放，不可恢复
+
+#### 状态转换保护机制
+
+1. **原子性保证**：每个状态转换都是原子操作，避免中间状态
+2. **队列处理**：状态变更请求排队处理，避免并发冲突
+3. **错误隔离**：错误状态不会影响正常的状态流转
+4. **资源管理**：状态转换时自动管理相关资源的生命周期
+
+#### 异步状态流转
+
+状态流转采用微任务调度机制，确保状态更新的时序正确性。通过 Promise 微任务将状态更新推迟到当前执行栈完成后，避免同步操作导致的状态不一致问题。
 
 ### 异步状态流转实现
 
