@@ -5,6 +5,7 @@ import Taro from '@tarojs/taro'
 import apis from '~/request'
 import { HttpStatus } from '~/request/enum'
 import { ChapterDetail } from '~/pages/audio-player/type'
+import { audioEventBus, AudioEvent } from '~/domain/audio/eventBus'
 
 export enum AudioPlayErrorCode {
   /** 需要付费 */
@@ -31,6 +32,7 @@ interface AudioMetadata {
   totalDuration: number // 总时长
   chapterId: string // 章节ID
   courseId: number // 课程ID
+  playedDuration?: number // 添加已播放时长
 }
 
 // 播放控制状态
@@ -66,6 +68,7 @@ export const useAudioStore = defineStore('audio', () => {
     totalDuration: 0,
     chapterId: '',
     courseId: 0,
+    playedDuration: 0, // 添加已播放时长默认值
   })
 
   // 播放控制状态
@@ -111,8 +114,8 @@ export const useAudioStore = defineStore('audio', () => {
     // 绑定事件监听器
     bindAudioEvents()
 
-    // 恢复播放状态
-    restorePlaybackState()
+    // ⭐ 注意：不在 init 阶段恢复断点，断点通过 playChapter 的 resumeFromRecord 恢复
+    // restorePlaybackState()
   }
 
   /**
@@ -144,17 +147,32 @@ export const useAudioStore = defineStore('audio', () => {
       }
 
       playbackState.isPlaying = true
+
+      // ⭐ 广播播放事件（UI 可无侵入监听）
+      audioEventBus.emit(AudioEvent.PLAY, {
+        chapterId: metadata.chapterId,
+        title: metadata.title,
+        currentTime: playbackState.currentTime,
+      })
     })
 
     // 暂停事件
     manager.onPause(() => {
       playbackState.isPlaying = false
+      // 暂停时保存本地状态，但不上报服务器进度
+      savePlaybackState()
+
+      audioEventBus.emit(AudioEvent.PAUSE, {
+        chapterId: metadata.chapterId,
+        currentTime: playbackState.currentTime,
+      })
     })
 
     // 停止事件
     manager.onStop(() => {
       playbackState.isPlaying = false
-      savePlaybackState() // ✅ 保存停止的进度
+      // ✅ 保存停止的进度，停止也上报（可能是因为用户主动结束本章学习）
+      updateProgressAndSaveState('heart_beat_event')
     })
 
     // 播放结束事件
@@ -185,6 +203,12 @@ export const useAudioStore = defineStore('audio', () => {
         })
       }
 
+      // ⭐ 广播播放进度（不会阻塞播放）
+      audioEventBus.emit(AudioEvent.TIME_UPDATE, {
+        currentTime: manager.currentTime,
+        duration: metadata.totalDuration,
+      })
+
       // ⭐进入“即将结束”逻辑（剩余 <= 1s）
       const remain = metadata.totalDuration - manager.currentTime
       if (remain <= 1) {
@@ -213,10 +237,17 @@ export const useAudioStore = defineStore('audio', () => {
         message: '播放错误',
       }
       console.error('背景音频播放错误')
+
+      audioEventBus.emit(AudioEvent.ERROR, {
+        code: AudioPlayErrorCode.UNKNOWN_ERROR,
+        message: '播放错误',
+      })
     })
 
     // 用户点击下一曲事件
     manager.onNext(() => {
+      audioEventBus.emit(AudioEvent.NEXT)
+
       const nextId = getNextId()
       if (nextId) {
         prepareNextChapter(nextId)
@@ -226,9 +257,12 @@ export const useAudioStore = defineStore('audio', () => {
     // 用户点击上一曲事件
     if (manager.onPrev) {
       manager.onPrev(() => {
+        audioEventBus.emit(AudioEvent.PREV)
+
         const prevId = getPrevId()
         if (prevId) {
-          playChapter(prevId)
+          // ⭐ 修改：上一首不续播
+          playChapter(prevId, false)
         }
       })
     }
@@ -304,9 +338,11 @@ export const useAudioStore = defineStore('audio', () => {
         return { success: false, ...playbackState.lastError }
       }
 
+      // 添加 playedDuration 到返回值
       return {
         success: true,
         playUrl: response?.data?.data?.playUrl,
+        playedDuration: response?.data?.data?.playedDuration || 0, // 获取已播放时长
       }
     } catch (error) {
       console.error('获取播放URL失败:', error)
@@ -358,7 +394,11 @@ export const useAudioStore = defineStore('audio', () => {
   /**
    * 播放指定章节
    */
-  const playChapter = async (chapterId: string) => {
+  const playChapter = async (
+    chapterId: string,
+    // ⭐ 默认从历史记录开始播放
+    resumeFromRecord = true
+  ) => {
     // 1. 获取播放URL
     const playUrlResult = await fetchPlayUrl(chapterId)
 
@@ -373,7 +413,8 @@ export const useAudioStore = defineStore('audio', () => {
     // 2. 获取章节详情并更新播放器
     const success = await updateChapterAndPlay(
       chapterId,
-      playUrlResult.playUrl || ''
+      playUrlResult.playUrl || '',
+      resumeFromRecord ? playUrlResult.playedDuration : 0
     )
     return { success }
   }
@@ -382,7 +423,11 @@ export const useAudioStore = defineStore('audio', () => {
    * 更新章节信息并播放
    * 提取公共逻辑，避免重复代码
    */
-  const updateChapterAndPlay = async (chapterId: string, playUrl: string) => {
+  const updateChapterAndPlay = async (
+    chapterId: string,
+    playUrl: string,
+    startTime: number = 0
+  ) => {
     try {
       // 1. 获取章节详情
       const chapterDetail = (await fetchChapterDetail(
@@ -404,12 +449,25 @@ export const useAudioStore = defineStore('audio', () => {
       if (manager) {
         manager.title = metadata.title
         manager.coverImgUrl = metadata.coverImgUrl
-        manager.src = playUrl
         // 设置src后会自动开始播放
+        manager.src = playUrl
+        // ⭐ 关键：用接口记录的播放进度断点续播
+        if (startTime > 0) {
+          manager.startTime = startTime
+          playbackState.currentTime = startTime
+        }
       }
 
+      audioEventBus.emit(AudioEvent.META_UPDATE, {
+        title: metadata.title,
+        cover: metadata.coverImgUrl,
+        chapterId: metadata.chapterId,
+        courseId: metadata.courseId,
+        startTime,
+      })
+
       // 4. 保存状态
-      savePlaybackState()
+      updateProgressAndSaveState('heart_beat_event')
 
       return true
     } catch (error) {
@@ -482,7 +540,12 @@ export const useAudioStore = defineStore('audio', () => {
 
     const manager = audioManager.value
     manager.seek(position)
-    savePlaybackState() // ✅ 立即保存
+
+    // ⭐ 广播 seek 结束
+    audioEventBus.emit(AudioEvent.SEEK_END, {
+      position,
+    })
+    updateProgressAndSaveState('drag_event')
   }
 
   /**
@@ -532,12 +595,7 @@ export const useAudioStore = defineStore('audio', () => {
    * 保存播放列表状态
    */
   const savePlaylistState = () => {
-    Taro.setStorageSync('audioPlaylist', {
-      playableIds: playlistState.playableIds,
-      currentPlayingId: playlistState.currentPlayingId,
-      currentIndex: playlistState.currentIndex,
-      playMode: playlistState.playMode,
-    })
+    Taro.setStorageSync('audioPlaylist', { ...playlistState })
   }
 
   /**
@@ -554,7 +612,44 @@ export const useAudioStore = defineStore('audio', () => {
   }
 
   /**
+   * 更新学习进度和保存本地播放状态
+   */
+  const updateProgressAndSaveState = (
+    eventType: 'drag_event' | 'heart_beat_event'
+  ) => {
+    // 1. 保存本地播放状态 - 保底
+    savePlaybackState()
+
+    // 2. 更新服务器学习进度
+    if (metadata.chapterId && metadata.courseId && playbackState.isPlaying) {
+      updateLearningProgress(eventType)
+    }
+  }
+
+  /**
+   * 向服务器更新学习进度（心跳接口）
+   */
+  const updateLearningProgress = async (
+    eventType: 'drag_event' | 'heart_beat_event'
+  ) => {
+    try {
+      await apis.post['/course/app/chapter/updateLearningProgress']({
+        data: {
+          courseId: metadata.courseId,
+          chapterId: metadata.chapterId,
+          learnDuration: Math.floor(playbackState.currentTime), // 使用当前播放时长作为学习时长
+          eventType: eventType, // 心跳事件, 拖动事件
+        },
+      })
+    } catch (error) {
+      console.error('更新学习进度失败:', error)
+    }
+  }
+
+  /**
    * 恢复播放状态
+   * 注意：当前未使用，断点续播通过 playChapter 的 resumeFromRecord 参数实现
+   * 未来可能用于应用启动时的状态恢复或完全离线场景
    */
   const restorePlaybackState = () => {
     try {
@@ -576,6 +671,8 @@ export const useAudioStore = defineStore('audio', () => {
         metadata.title = playbackStateSaved.title || ''
         metadata.coverImgUrl = playbackStateSaved.coverImgUrl || ''
         metadata.chapterId = playbackStateSaved.chapterId || ''
+        metadata.courseId = playbackStateSaved.courseId || ''
+        metadata.playedDuration = playbackStateSaved.playedDuration || 0
       }
     } catch (error) {
       console.error('恢复播放状态失败:', error)
@@ -595,7 +692,7 @@ export const useAudioStore = defineStore('audio', () => {
       const now = Date.now()
       // 每隔5秒保存一次，或者播放接近结束时也保存
       if (now - lastSavedTime > 5000 || currentTime >= metadata.totalDuration) {
-        savePlaybackState()
+        updateProgressAndSaveState('heart_beat_event')
         lastSavedTime = now
       }
     }
@@ -631,5 +728,6 @@ export const useAudioStore = defineStore('audio', () => {
     savePlaybackState,
     setDragging,
     clearError,
+    restorePlaybackState,
   }
 })
