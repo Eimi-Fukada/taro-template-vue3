@@ -75,6 +75,10 @@ const config = {
             ],
           },
         },
+        // taro 有时候会报错app.js错误:  ReferenceError: chunkLoadingGlobal is not defined，要加这个
+        output: {
+          chunkLoadingGlobal: 'webpackJsonp',
+        },
       })
 
       chain.plugin('unplugin-vue-components').use(
