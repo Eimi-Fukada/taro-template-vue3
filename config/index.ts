@@ -47,8 +47,31 @@ const config = {
   },
   mini: {
     hot: true,
+    // 使用 Taro 原生的 CSS 压缩配置
+    csso: {
+      enable: true,
+      config: {
+        // 配置项同 https://cssnano.co/docs/what-are-optimisations/
+        // 更激进的 CSS 压缩选项
+        restructure: true, // 启用 CSS 结构优化
+        forceMediaMerge: true, // 合并相同的媒体查询
+        semicolonAfterLastBlock: false, // 最后一个块后不加分号
+        comments: false, // 移除注释
+        discardUnused: true, // 移除未使用的 CSS 规则
+        mergeIdents: true, // 合并相同的标识符
+        reduceIdents: true, // 减少标识符
+        minifySelectors: true, // 压缩选择器
+      },
+    },
     webpackChain(chain, webpack) {
       chain.merge({
+        // 添加性能优化配置
+        performance: {
+          // 提高资产大小限制，避免警告
+          maxAssetSize: 500000, // 500KB
+          maxEntrypointSize: 500000, // 500KB
+          hints: false, // 关闭性能提示
+        },
         module: {
           rule: {
             mjsScript: {
