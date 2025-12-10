@@ -6,11 +6,11 @@
       <!-- 播放器 -->
       <AudioVoc />
 
-      <RichText
+      <rich-text
         v-if="state.chapterDetail.manuscript"
         class="mt-5 text-text-secondary text-base"
         :nodes="state.chapterDetail.manuscript"
-      ></RichText>
+      ></rich-text>
     </view>
   </viewContainer>
 </template>
@@ -19,7 +19,6 @@
 import viewContainer from '~/layout/viewContainer.vue'
 import { Navigation } from '~/components'
 import { useViewModel } from './viewModel.ts'
-import { RichText } from '@tarojs/components'
 import { imageOssUrl } from '~/config'
 import { AudioVoc } from '~/components'
 
