@@ -1,8 +1,8 @@
 <template>
   <view :class="styles.container">
-    <!-- 自定义下拉刷新区域 -->
+    <!-- 自定义下拉刷新区域, 下拉刷新区域（只在 container 模式显示) -->
     <view
-      v-if="enableRefresh && pullRefreshVisible"
+      v-if="scrollMode === 'container' && enableRefresh && pullRefreshVisible"
       :class="styles.pullRefresh"
       :style="{ height: pullRefreshHeight + 'px' }"
     >
@@ -27,6 +27,7 @@
     </view>
 
     <scroll-view
+      v-if="scrollMode === 'container'"
       :class="styles.scrollView"
       :scroll-y="true"
       enhanced
@@ -38,74 +39,45 @@
       @touchmove="handleTouchMove"
       @touchend="handleTouchEnd"
     >
-      <!-- 骨架屏 - 首次加载 -->
-      <view v-if="state.loading" :class="styles.skeleton">
-        <slot name="skeleton">
-          <nut-skeleton
-            width="100%"
-            height="15px"
-            animated
-            round
-            :row="5"
-            style="width: 100%"
-          />
-        </slot>
-      </view>
+      <ListContent
+        :state="state"
+        :retry="retry"
+        :empty-text="emptyText"
+        :empty-image="emptyImage"
+        :no-more-text="noMoreText"
+      >
+        <template #skeleton>
+          <slot name="skeleton" />
+        </template>
 
-      <!-- 数据列表 -->
-      <view v-else-if="!state.isEmpty" :class="styles.list">
-        <view
-          v-for="(item, index) in state.list"
-          :key="getItemKey(item, index)"
-          :class="styles.listItem"
-        >
-          <slot name="item" :item="item" :index="index">
-            <view :class="styles.defaultItem">
-              {{ JSON.stringify(item) }}
-            </view>
-          </slot>
-        </view>
+        <template #item="slotProps">
+          <slot name="item" v-bind="slotProps" />
+        </template>
 
-        <!-- 加载更多状态 -->
-        <view v-if="state.loadingMore" :class="styles.loadMore">
-          <view :class="styles.loading">
-            <view :class="styles.spinner" />
-            <text :class="styles.loadingText">正在加载更多...</text>
-          </view>
-        </view>
+        <template #empty>
+          <slot name="empty" />
+        </template>
 
-        <!-- 没有更多数据 -->
-        <view
-          v-if="!state.hasMore && !state.loadingMore && state.list.length > 0"
-          :class="styles.noMore"
-        >
-          <text :class="styles.noMoreText">{{ noMoreText }}</text>
-        </view>
-      </view>
-
-      <!-- 空状态 -->
-
-      <view v-else :class="styles.empty">
-        <slot name="empty">
-          <image
-            :src="emptyImage || images.empty"
-            :class="styles.empty_image"
-            mode="aspectFit"
-          />
-          <text :class="styles.emptyText">{{ emptyText }}</text>
-        </slot>
-      </view>
-
-      <!-- 错误状态 -->
-      <view v-if="state.error && !state.loading" :class="styles.error">
-        <slot name="error" :error="state.error" :retry="retry">
-          <view :class="styles.errorContent">
-            <text :class="styles.errorText">{{ state.error }}</text>
-            <view :class="styles.retryText" @tap="retry">重试</view>
-          </view>
-        </slot>
-      </view>
+        <template #error="slotProps">
+          <slot name="error" v-bind="slotProps" />
+        </template>
+      </ListContent>
     </scroll-view>
+
+    <!-- 页面滚动模式 -->
+    <view v-else :class="styles.scrollView">
+      <ListContent
+        :state="state"
+        :retry="retry"
+        :empty-text="emptyText"
+        :empty-image="emptyImage"
+        :no-more-text="noMoreText"
+      >
+        <template #item="slotProps">
+          <slot name="item" v-bind="slotProps" />
+        </template>
+      </ListContent>
+    </view>
   </view>
 </template>
 
@@ -114,7 +86,7 @@ import { ref, onMounted, computed } from 'vue'
 import { usePaginationList } from './hooks'
 import styles from './index.module.less'
 import type { PaginationListProps } from './types'
-import images from '~/assets/icon-image/images'
+import ListContent from './ListContent.vue'
 
 // Props 定义
 const {
@@ -128,6 +100,7 @@ const {
   debounceDelay = 300,
   height,
   autoFetch = true,
+  scrollMode = 'container',
 } = defineProps<PaginationListProps<T>>()
 
 // 使用分页 Hook
@@ -180,14 +153,6 @@ const touchStartY = ref(0)
 const touchMoveY = ref(0)
 const isPulling = ref(false)
 const maxPullDistance = 60 // 最大下拉距离
-
-// 获取列表项的 key
-const getItemKey = (item: T, index: number): string | number => {
-  if (typeof item === 'object' && item !== null && 'id' in item) {
-    return (item as { id: string | number }).id
-  }
-  return index
-}
 
 // 处理触摸开始
 const handleTouchStart = (event: TouchEvent) => {

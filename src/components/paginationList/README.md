@@ -204,6 +204,7 @@ const handleRefresh = () => {
 | noMoreText | `string` | `'没有更多数据了'` | 没有更多数据文案 |
 | enableRefresh | `boolean` | `true` | 是否启用下拉刷新 |
 | debounceDelay | `number` | `300` | 防抖延迟时间（ms） |
+| scrollMode | `'container' \| 'page'` | `'container'` | 滚动模式，container模式使用组件内部scroll-view，page模式交给页面托管滚动 |
 
 ### FetchDataFunction
 
@@ -324,6 +325,78 @@ interface PaginationListInstance {
 ```
 
 ## 高级用法
+
+### 滚动模式 (scrollMode)
+
+PaginationList 支持两种滚动模式：
+
+#### 1. container 模式（默认）
+
+使用组件内部的 scroll-view，支持上下拉、触底事件自动加载更多。
+
+**特点：**
+- 必须传递 height，否则 scrolltolower 等事件无法触发
+- 适合列表独立滚动，不依赖页面整体滚动
+- 组件内部处理所有滚动事件
+
+**示例：**
+
+```vue
+<template>
+  <pagination-list
+    :fetch-data="fetchData"
+    :height="500"
+    scroll-mode="container"
+  >
+    <template #item="{ item }">
+      <view>{{ item.title }}</view>
+    </template>
+  </pagination-list>
+</template>
+```
+
+#### 2. page 模式
+
+列表滚动由页面托管，scroll-view 不再需要内部高度。
+
+**特点：**
+- 不必传 height，列表高度会随页面自然增长
+- 适合全页面滚动场景，如页面有导航栏、轮播图等
+- 滚动事件由页面的 usePageScroll 或小程序的 onPageScroll 处理
+- 触底事件由页面的 useReachBottom 或小程序的 onReachBottom 处理
+
+**示例：**
+
+```vue
+<template>
+  <view>
+    <Navigation title="首页" />
+    <nut-swiper :auto-play="3000">
+      <nut-swiper-item v-for="(s, i) in banners" :key="i">
+        <image :src="s" />
+      </nut-swiper-item>
+    </nut-swiper>
+
+    <pagination-list
+      :fetch-data="fetchData"
+      scroll-mode="page"
+    >
+      <template #item="{ item }">
+        <view>{{ item.title }}</view>
+      </template>
+    </pagination-list>
+  </view>
+</template>
+```
+
+#### scrollMode 使用注意事项
+
+- **容器高度**：container 模式必须传 height，page 模式下不需要传 height
+- **滚动触发**：scroll-view 必须有高度才能触发 scrolltolower 事件，page 模式下使用页面滚动事件
+- **下拉刷新**：内置防抖机制，避免重复请求，开启 enableRefresh 可自定义下拉刷新样式
+- **空状态、错误状态、骨架屏**：可以通过插槽自定义显示
+- **跨平台**：微信小程序、H5、支付宝小程序等平台滚动行为略有差异，推荐在页面测试
+- **CRUD 和搜索**：Hook 提供本地数据操作，page 模式可直接使用页面滚动监听
 
 ### CRUD 操作示例
 
@@ -590,6 +663,10 @@ const handleReset = () => {
 3. **错误处理**: 组件会自动捕获 `fetchData` 中的错误并显示错误状态
 4. **防抖机制**: 内置防抖，避免快速滚动时的重复请求
 5. **跨平台兼容**: 在不同平台上滚动行为可能略有差异
+6. **scrollMode 选择**：
+   - container 模式适合需要固定高度的独立列表
+   - page 模式适合全页面滚动，特别是页面有其他内容如导航栏、轮播图等
+   - page 模式下，列表会自动占满剩余空间，不需要设置 height
 
 ## 常见问题
 

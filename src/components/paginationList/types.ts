@@ -1,4 +1,9 @@
 /**
+ * 【滚动策略模式】
+ */
+export type ScrollMode = 'container' | 'page'
+
+/**
  * 分页响应数据结构
  */
 export interface PaginationResponse<T = any> {
@@ -18,10 +23,7 @@ export type FetchDataFunction<T = any> = (
   pageSize: number
 ) => Promise<PaginationResponse<T>>
 
-/**
- * 分页组件 Props
- */
-export interface PaginationListProps<T = any> {
+export interface BaseProps<T = any> {
   /** 数据获取函数 */
   readonly fetchData: FetchDataFunction<T>
   /** 每页数据量，默认 20 */
@@ -36,13 +38,38 @@ export interface PaginationListProps<T = any> {
   readonly enableRefresh?: boolean
   /** 防抖延迟时间，默认 300ms */
   readonly debounceDelay?: number
-  /** 高度，如果不传会导致scroll-view无法触发触底事件，如果组件内部托管会增加复杂度，需要开发者自己传递 */
-  readonly height: number | string
   /** 自定义空状态图片 */
   readonly emptyImage?: string
   /** 是否自动请求 */
   readonly autoFetch?: boolean
 }
+
+/** container 模式必须传 height */
+export interface ContainerModeProps<T = any> extends BaseProps<T> {
+  /**
+   * 滚动模式，默认为 'container'，可选 'page' 模式
+   */
+  scrollMode?: 'container'
+  /** 高度，如果不传会导致scroll-view无法触发触底事件，如果组件内部托管会增加复杂度，需要开发者自己传递 */
+  height: number | string
+}
+
+/** page 模式 height 可选 */
+export interface PageModeProps<T = any> extends BaseProps<T> {
+  /**
+   * 滚动模式，默认为 'container'，可选 'page' 模式
+   */
+  scrollMode: 'page'
+  /** height 可选 */
+  height?: number | string
+}
+
+/**
+ * 分页组件 Props
+ */
+export type PaginationListProps<T = any> =
+  | ContainerModeProps<T>
+  | PageModeProps<T>
 
 /**
  * 分页状态
