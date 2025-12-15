@@ -1,9 +1,9 @@
 <template>
-  <view v-if="!hasError" class="h-full flex flex-col">
+  <view v-if="!hasError" :class="styles.page">
     <slot />
     <AudioPlayer />
-    <view v-if="isTab" class="tabHeight" />
-    <view v-if="isNewIphone && !noPlace" class="spacingIphone" />
+    <view v-if="isTab" :class="styles.tabHeight" />
+    <view v-if="isNewIphone && !noPlace" :class="styles.spacingIphone" />
     <!-- 全局弹窗容器 -->
     <GlobalDialogContainer />
   </view>
