@@ -15,7 +15,7 @@
         :src="Left"
         :class="styles.nextPrev"
         class="btn-scale-fast"
-        @tap="playPrev"
+        @tap="playPrevWithEmit"
       />
       <image
         :src="playbackState.isPlaying ? Pause : Play"
@@ -27,7 +27,7 @@
         :src="Right"
         :class="styles.nextPrev"
         class="btn-scale-fast"
-        @tap="playNext"
+        @tap="playNextWithEmit"
       />
       <image
         :src="Right_minutes"
@@ -70,6 +70,12 @@ import { Slider } from '@tarojs/components'
 import { useAudioStore } from '~/stores/useAudioStore'
 import { computed, reactive } from 'vue'
 
+// 定义事件
+const emits = defineEmits<{
+  'on-prev': []
+  'on-next': []
+}>()
+
 const Left_minutes = `${imageOssUrl}/2025/11/27/6fca7abb8ed1458b983047a14f6507f7.png`
 const Right_minutes = `${imageOssUrl}/2025/11/27/6bf3f5f8fbed4f1190ecf16a4e281074.png`
 const Left = `${imageOssUrl}/2025/11/27/72981d3bbb1445d590cb54127995fae5.png`
@@ -93,6 +99,17 @@ const {
 const state = reactive({
   draggingValue: 0,
 })
+
+// 封装播放上一首和下一首的方法，并触发事件
+const playPrevWithEmit = () => {
+  playPrev()
+  emits('on-prev')
+}
+
+const playNextWithEmit = () => {
+  playNext()
+  emits('on-next')
+}
 
 const displayValue = computed(() => {
   return dragging ? state.draggingValue : playbackState.currentTime
