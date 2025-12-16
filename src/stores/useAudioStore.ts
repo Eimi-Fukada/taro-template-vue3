@@ -114,6 +114,7 @@ export const useAudioStore = defineStore('audio', () => {
     // 绑定事件监听器
     bindAudioEvents()
 
+    setupFloatingWindowWatcher()
     // ⭐ 注意：不在 init 阶段恢复断点，断点通过 playChapter 的 resumeFromRecord 恢复
     // restorePlaybackState()
   }
@@ -273,6 +274,41 @@ export const useAudioStore = defineStore('audio', () => {
         stop()
       })
     }
+  }
+
+  // init() 之后调用，解决系统浮窗被关闭同步播放状态的问题
+  const setupFloatingWindowWatcher = () => {
+    if (!audioManager.value) return
+
+    let intervalId: number | null = null
+
+    const checkPaused = () => {
+      const manager = audioManager.value
+      if (!manager) return
+
+      // 如果后台播放被暂停，并且 playbackState.isPlaying 还是 true，就同步状态
+      if (!manager.paused && !playbackState.isPlaying) {
+        // 播放中被系统暂停，不处理
+        return
+      }
+
+      if (manager.paused && playbackState.isPlaying) {
+        // 浮窗关闭或播放被系统暂停
+        playbackState.isPlaying = false
+        savePlaybackState()
+      }
+    }
+
+    // 每 500ms 检查一次
+    intervalId = setInterval(checkPaused, 500) as unknown as number
+
+    // 当小程序退出时清理定时器
+    Taro.onAppHide(() => {
+      if (intervalId) {
+        clearInterval(intervalId)
+        intervalId = null
+      }
+    })
   }
 
   /**
