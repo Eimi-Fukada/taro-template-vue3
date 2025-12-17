@@ -49,6 +49,13 @@ interface PlaybackState {
   }
 }
 
+// 下一章节预加载结果
+interface NextChapterBuffer {
+  chapterId: string
+  playUrl: string
+  playedDuration: number
+}
+
 export const useAudioStore = defineStore('audio', () => {
   // BackgroundAudioManager实例（全局唯一）
   const audioManager = ref<Taro.BackgroundAudioManager | null>(null)
@@ -83,6 +90,10 @@ export const useAudioStore = defineStore('audio', () => {
 
   // 进度条拖动状态
   const dragging = ref(false)
+  // 下一章节的“已准备好结果”
+  const nextChapterBuffer = ref<NextChapterBuffer | null>(null)
+  // 下一章节“正在准备中”的事实（Promise 既是锁也是状态）
+  const nextChapterPromise = ref<Promise<void> | null>(null)
 
   // 计算属性
   const hasNext = computed(() => {
@@ -185,10 +196,18 @@ export const useAudioStore = defineStore('audio', () => {
 
       // 获取下一首ID
       const nextId = getNextId()
-      if (nextId) {
-        // 不直接播放，而是先获取下一章节的URL和详情
-        prepareNextChapter(nextId)
+      if (!nextId) return
+      // ⭐ 优先使用 onTimeUpdate 已验证过的结果
+      const buffer = nextChapterBuffer.value
+      if (buffer && buffer.chapterId === nextId) {
+        nextChapterBuffer.value = null
+
+        updateChapterAndPlay(buffer.chapterId, buffer.playUrl, 0)
+        return
       }
+
+      // 兜底：极端情况下仍走老逻辑
+      prepareNextChapter(nextId)
     })
 
     // 时间更新事件，拖动状态下防止触发页面组件重新渲染
@@ -214,18 +233,36 @@ export const useAudioStore = defineStore('audio', () => {
       const remain = metadata.totalDuration - manager.currentTime
       if (remain <= 1) {
         const nextId = getNextId()
-        // 如果已经有错误（如下一首失败），避免重复执行
-        if (!nextId || playbackState.lastError.message) return
+        if (!nextId) return
 
-        const playUrlResult = await fetchPlayUrl(nextId)
-
-        // ❗下一首不可播 → 不让进入 onEnded → 卡在最后一秒 + 暂停
-        if (!playUrlResult.success && playbackState.isPlaying) {
-          // 不切歌、不触发 onEnded 播放逻辑
-          manager.pause()
+        // ⭐ 如果已经有结果，直接用结果判断
+        if (nextChapterBuffer.value?.chapterId === nextId) {
           return
         }
-        // 下一首可以播放，交给 onEnded 去正常切歌
+
+        // ⭐ 如果已经在检查中，什么都不做（避免并发）
+        if (nextChapterPromise.value) {
+          return
+        }
+
+        // ⭐ 发起“最后 1 秒可用性检查”
+        nextChapterPromise.value = (async () => {
+          const result = await fetchPlayUrl(nextId, { silent: true })
+
+          if (!result.success && playbackState.isPlaying) {
+            manager.pause()
+            return
+          }
+
+          // ✅ 可播放，写入 buffer，供 onEnded 使用
+          nextChapterBuffer.value = {
+            chapterId: nextId,
+            playUrl: result.playUrl!,
+            playedDuration: result.playedDuration || 0,
+          }
+        })().finally(() => {
+          nextChapterPromise.value = null
+        })
       }
     })
 
@@ -315,6 +352,10 @@ export const useAudioStore = defineStore('audio', () => {
    * 设置播放列表
    */
   const setPlaylist = (playableIds: string[], currentId: string) => {
+    // 防止上一首的「下一章节缓存」污染当前播放链路
+    nextChapterBuffer.value = null
+    nextChapterPromise.value = null
+
     playlistState.playableIds = playableIds
     playlistState.currentPlayingId = currentId
     playlistState.currentIndex = playableIds.findIndex((id) => id === currentId)
@@ -350,10 +391,15 @@ export const useAudioStore = defineStore('audio', () => {
   /**
    * 获取章节播放URL
    */
-  const fetchPlayUrl = async (chapterId: string) => {
+  const fetchPlayUrl = async (
+    chapterId: string,
+    options?: { silent?: boolean }
+  ) => {
     try {
-      playbackState.isLoading = true
-      playbackState.lastError = {}
+      if (!options?.silent) {
+        playbackState.isLoading = true
+        playbackState.lastError = {}
+      }
 
       const response = await apis.get['/course/app/chapter/playUrl/{id}']({
         args: { id: chapterId },
@@ -382,15 +428,19 @@ export const useAudioStore = defineStore('audio', () => {
       }
     } catch (error) {
       console.error('获取播放URL失败:', error)
-      playbackState.lastError = {
-        code: AudioPlayErrorCode.UNKNOWN_ERROR,
-        message: '网络错误，请检查网络连接',
+      if (!options?.silent) {
+        playbackState.lastError = {
+          code: AudioPlayErrorCode.UNKNOWN_ERROR,
+          message: '网络错误，请检查网络连接',
+        }
       }
       return {
         success: false,
       }
     } finally {
-      playbackState.isLoading = false
+      if (!options?.silent) {
+        playbackState.isLoading = false
+      }
     }
   }
 
@@ -414,6 +464,21 @@ export const useAudioStore = defineStore('audio', () => {
    * 准备下一章节（获取URL和详情）
    */
   const prepareNextChapter = async (nextChapterId: string) => {
+    if (nextChapterPromise.value) {
+      await nextChapterPromise.value
+    }
+
+    const buffer = nextChapterBuffer.value
+    if (buffer?.chapterId === nextChapterId) {
+      nextChapterBuffer.value = null
+      await updateChapterAndPlay(
+        buffer.chapterId,
+        buffer.playUrl,
+        buffer.playedDuration
+      )
+      return
+    }
+
     try {
       // 先获取URL，检查是否可播放
       const playUrlResult = await fetchPlayUrl(nextChapterId)
@@ -435,6 +500,10 @@ export const useAudioStore = defineStore('audio', () => {
     // ⭐ 默认从历史记录开始播放
     resumeFromRecord = true
   ) => {
+    // 防止上一首的「下一章节缓存」污染当前播放链路
+    nextChapterBuffer.value = null
+    nextChapterPromise.value = null
+
     // 1. 获取播放URL
     const playUrlResult = await fetchPlayUrl(chapterId)
 
@@ -529,6 +598,10 @@ export const useAudioStore = defineStore('audio', () => {
    * 下一首
    */
   const playNext = async () => {
+    // 防止上一首的「下一章节缓存」污染当前播放链路
+    nextChapterBuffer.value = null
+    nextChapterPromise.value = null
+
     const nextId = getNextId()
     if (nextId) {
       prepareNextChapter(nextId)
@@ -539,6 +612,10 @@ export const useAudioStore = defineStore('audio', () => {
    * 上一首
    */
   const playPrev = async () => {
+    // 防止上一首的「下一章节缓存」污染当前播放链路
+    nextChapterBuffer.value = null
+    nextChapterPromise.value = null
+
     const prevId = getPrevId()
     if (prevId) {
       playChapter(prevId)
