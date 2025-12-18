@@ -10,12 +10,7 @@
       @tap.stop="handleClick"
       @touchmove.stop.prevent="handleTouchMove"
     />
-    <view
-      :class="styles.Modal_content"
-      catch-move
-      @touchmove.stop.prevent="handleTouchMove"
-      @tap.stop
-    >
+    <view :class="styles.Modal_content" @tap.stop>
       <slot />
     </view>
   </view>
