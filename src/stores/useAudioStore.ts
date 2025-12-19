@@ -554,6 +554,8 @@ export const useAudioStore = defineStore('audio', () => {
       if (manager) {
         manager.title = metadata.title
         manager.coverImgUrl = metadata.coverImgUrl
+        // ✅ 强制归零（关键）解决当每个章节都是 100% 的时候，自然过度到下一个章节会导致每个章节都从断点播放
+        manager.startTime = 0
         // 设置src后会自动开始播放
         manager.src = playUrl
         // ⭐ 关键：用接口记录的播放进度断点续播
