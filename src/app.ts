@@ -13,6 +13,80 @@ import { useAudioStore } from './stores/useAudioStore'
 
 const pinia = createPinia()
 
+// 检查小程序更新的方法
+const checkForUpdate = () => {
+  // #ifdef MP-WEIXIN
+  const updateManager = wx.getUpdateManager()
+
+  updateManager.onCheckForUpdate((res: any) => {
+    console.log('是否有新版本：', res.hasUpdate)
+  })
+
+  updateManager.onUpdateReady(() => {
+    wx.showModal({
+      title: '更新提示',
+      content: '新版本已经准备好，是否重启应用？',
+      success: (res: any) => {
+        if (res.confirm) {
+          // 新的版本已经下载好，调用 applyUpdate 应用新版本并重启
+          updateManager.applyUpdate()
+        }
+      },
+    })
+  })
+
+  updateManager.onUpdateFailed(() => {
+    // 新版本下载失败
+    wx.showModal({
+      title: '更新失败',
+      content: '新版本下载失败，请检查网络后重试',
+      showCancel: false,
+    })
+  })
+  // #endif
+}
+
+// 设置网络状态监听的方法
+const setupNetworkStatusListener = () => {
+  // 获取当前网络状态
+  Taro.getNetworkType({
+    success: (res: any) => {
+      console.log('当前网络类型：', res.networkType)
+      if (res.networkType === 'none') {
+        Taro.showToast({
+          title: '网络连接不可用',
+          icon: 'none',
+          duration: 2000,
+        })
+      }
+    },
+  })
+
+  // 注册网络状态监听器
+  Taro.onNetworkStatusChange((res: any) => {
+    console.log('网络状态变化：', res)
+    if (!res.isConnected) {
+      Taro.showToast({
+        title: '网络连接已断开',
+        icon: 'none',
+        duration: 2000,
+      })
+    } else if (res.networkType === '2g' || res.networkType === '3g') {
+      Taro.showToast({
+        title: '网络信号较弱',
+        icon: 'none',
+        duration: 2000,
+      })
+    }
+  })
+}
+
+// 移除网络状态监听的方法
+const removeNetworkStatusListener = () => {
+  // 取消所有网络状态监听
+  Taro.offNetworkStatusChange()
+}
+
 const App = createApp({
   onLaunch() {
     App.use(pinia)
@@ -47,10 +121,23 @@ const App = createApp({
 
     Taro.onAppShow(() => {
       wx.onBeforeAppRoute(routeListener) // 重新注册
+      // 小程序显示时重新设置网络监听
+      setupNetworkStatusListener()
     })
+
+    // 检查小程序更新
+    checkForUpdate()
+
+    // 监听网络状态
+    setupNetworkStatusListener()
   },
 
   onShow(_options) {},
+
+  onHide() {
+    // 小程序隐藏时移除网络监听，节省性能
+    removeNetworkStatusListener()
+  },
   // 入口组件不需要实现 render 方法，即使实现了也会被 taro 所覆盖
 })
 
