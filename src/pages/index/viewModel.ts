@@ -1,5 +1,5 @@
 import { reactive, onMounted, ref } from 'vue'
-import Taro, { usePageScroll } from '@tarojs/taro'
+import Taro, { usePageScroll, usePullDownRefresh } from '@tarojs/taro'
 import { FetchDataFunction, UsePaginationListReturn } from '~/components'
 import apis from '~/request'
 import { CoursesItemProps } from './type'
@@ -56,6 +56,11 @@ export const useViewModel = () => {
   onMounted(() => {
     // 示例：获取首页数据
     listRef.value?.refresh()
+  })
+
+  usePullDownRefresh(async () => {
+    await listRef.value?.refresh()
+    Taro.stopPullDownRefresh()
   })
 
   return {
