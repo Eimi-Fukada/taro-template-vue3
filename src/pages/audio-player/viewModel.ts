@@ -1,4 +1,4 @@
-import { useRouter } from '@tarojs/taro'
+import { useRouter, useShareAppMessage } from '@tarojs/taro'
 import { onMounted, onUnmounted, reactive, watch } from 'vue'
 import apis from '~/request'
 import { ChapterDetail } from './type'
@@ -14,7 +14,7 @@ export const useViewModel = () => {
   const routerParams = useRouter()?.params
 
   const { globalDialog } = Taro
-  const { playbackState, clearError, playChapter } = useAudioStore()
+  const { playbackState, clearError, playChapter, metadata } = useAudioStore()
   const { hideForPage, showForPage } = useAudioFloatStore()
 
   const getData = async () => {
@@ -65,6 +65,14 @@ export const useViewModel = () => {
     // 离开播放页：如果有播放中的音频，则显示浮窗，否则不显示
     if (playbackState.isPlaying) {
       showForPage()
+    }
+  })
+
+  useShareAppMessage(() => {
+    return {
+      title: `${metadata.title}`,
+      path: '/page/user?id=123',
+      imageUrl: `${metadata.coverImgUrl}`,
     }
   })
 
