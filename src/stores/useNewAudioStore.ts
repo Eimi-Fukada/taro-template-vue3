@@ -1,8 +1,16 @@
-// stores/useAudioStore.ts
+// stores/useNewAudioStore.ts
 /**
- * 当前的逻辑是如果下一章节需要付费，则需要停留在当前章节的尾部，而不是进入下一章节的头部
- * 所以需要在 onTimeUpdate 中判断是否需要跳转到下一章节
- * 当前 onTimeUpdate 本应是“状态同步器”，现在却变成了“业务调度中心”，这种产品逻辑是相当不合理的
+ * 新的逻辑是如果下一章节需要付费，则需要停留在下一章节的头部，这种产品逻辑更主流，也更健康
+ * 原因有三点：
+ * 1. 符合用户心智
+ * 用户点击「下一集」，预期是"进入下一集"，而不是被卡在上一集尾巴
+ *喜马拉雅、得到、网易云知识付费课程，都是允许进入下一章但不播放
+ * 2. 降低播放器复杂度
+ * 不再需要「在尾部 1s 内做复杂判断」
+ * 不再需要"尾部强制 pause"的 workaround
+ * 3. 权限语义更清晰
+ * 播放权限 ≠ 查看章节
+ * 章节可以进入，但播放行为被拦截
  */
 import { defineStore } from 'pinia'
 import { ref, reactive, computed, watch, nextTick } from 'vue'
@@ -196,22 +204,10 @@ export const useAudioStore = defineStore('audio', () => {
     manager.onEnded(() => {
       playbackState.isPlaying = false
 
-      // 如果上一阶段出现错误，中断 onEnded 的正常行为
-      if (playbackState.lastError.message) return
-
       // 获取下一首ID
       const nextId = getNextId()
       if (!nextId) return
-      // ⭐ 优先使用 onTimeUpdate 已验证过的结果
-      const buffer = nextChapterBuffer.value
-      if (buffer && buffer.chapterId === nextId) {
-        nextChapterBuffer.value = null
 
-        updateChapterAndPlay(buffer.chapterId, buffer.playUrl, 0)
-        return
-      }
-
-      // 兜底：极端情况下仍走老逻辑
       prepareNextChapter(nextId)
     })
 
@@ -233,42 +229,6 @@ export const useAudioStore = defineStore('audio', () => {
         currentTime: manager.currentTime,
         duration: metadata.totalDuration,
       })
-
-      // ⭐进入“即将结束”逻辑（剩余 <= 1s）
-      const remain = metadata.totalDuration - manager.currentTime
-      if (remain <= 1) {
-        const nextId = getNextId()
-        if (!nextId) return
-
-        // ⭐ 如果已经有结果，直接用结果判断
-        if (nextChapterBuffer.value?.chapterId === nextId) {
-          return
-        }
-
-        // ⭐ 如果已经在检查中，什么都不做（避免并发）
-        if (nextChapterPromise.value) {
-          return
-        }
-
-        // ⭐ 发起“最后 1 秒可用性检查”
-        nextChapterPromise.value = (async () => {
-          const result = await fetchPlayUrl(nextId, { silent: true })
-
-          if (!result.success && playbackState.isPlaying) {
-            manager.pause()
-            return
-          }
-
-          // ✅ 可播放，写入 buffer，供 onEnded 使用
-          nextChapterBuffer.value = {
-            chapterId: nextId,
-            playUrl: result.playUrl!,
-            playedDuration: result.playedDuration || 0,
-          }
-        })().finally(() => {
-          nextChapterPromise.value = null
-        })
-      }
     })
 
     // 错误事件
@@ -488,10 +448,12 @@ export const useAudioStore = defineStore('audio', () => {
       // 先获取URL，检查是否可播放
       const playUrlResult = await fetchPlayUrl(nextChapterId)
 
-      if (playUrlResult.success) {
-        // 如果URL获取成功，播放下一章节
-        await updateChapterAndPlay(nextChapterId, playUrlResult.playUrl || '')
-      }
+      // 先更新章节信息（UI / 浮窗）
+      await updateChapterAndPlay(
+        nextChapterId,
+        playUrlResult.success ? playUrlResult.playUrl || '' : '',
+        0
+      )
     } catch (error) {
       console.error('准备下一章节出错:', error)
     }
