@@ -10,4 +10,5 @@ export const AudioEvent = {
   ERROR: 'audio:error',
   NEXT: 'audio:next',
   PREV: 'audio:prev',
+  STOP: 'audio:stop',
 } as const

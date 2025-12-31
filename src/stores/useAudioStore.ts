@@ -190,6 +190,8 @@ export const useAudioStore = defineStore('audio', () => {
       playbackState.isPlaying = false
       // ✅ 保存停止的进度，停止也上报（可能是因为用户主动结束本章学习）
       updateProgressAndSaveState('heart_beat_event')
+
+      audioEventBus.emit(AudioEvent.STOP)
     })
 
     // 播放结束事件
@@ -307,13 +309,6 @@ export const useAudioStore = defineStore('audio', () => {
           // ⭐ 修改：上一首不续播
           playChapter(prevId, false)
         }
-      })
-    }
-
-    // 用户点击停止事件
-    if (manager.onStop) {
-      manager.onStop(() => {
-        stop()
       })
     }
   }

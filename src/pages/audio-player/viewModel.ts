@@ -14,7 +14,8 @@ export const useViewModel = () => {
   const routerParams = useRouter()?.params
 
   const { globalDialog } = Taro
-  const { playbackState, clearError, playChapter, metadata } = useAudioStore()
+  const { playbackState, clearError, playChapter, metadata, setPlaylist } =
+    useAudioStore()
   const { hideForPage, showForPage } = useAudioFloatStore()
 
   const getData = async () => {
@@ -26,7 +27,9 @@ export const useViewModel = () => {
       }),
     ])
     state.chapterDetail = chapterDetail?.data?.data as ChapterDetail
-    // 这里开始播放，如果你需要在其他页面进入，可以把这里的逻辑抽出来，在需要播放的地方调用这个方法，其他的地方直接执行跳转即可
+    const playableIds = (chapterDetail?.data?.data || []).map((i) => i.id)
+    // 这里开始播放，如果你需要在其他页面进入，可以把这里的逻辑抽出来，在需要播放的地方调用这个方法，其他的地方直接执行跳转即可，最好是放在这个页面，这样这个页面可以单独分享出去
+    setPlaylist(playableIds, routerParams?.chapterId || '')
     await playChapter(routerParams?.id || '')
   }
 

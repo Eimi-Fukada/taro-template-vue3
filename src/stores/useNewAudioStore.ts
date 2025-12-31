@@ -62,13 +62,6 @@ interface PlaybackState {
   }
 }
 
-// 下一章节预加载结果
-interface NextChapterBuffer {
-  chapterId: string
-  playUrl: string
-  playedDuration: number
-}
-
 export const useAudioStore = defineStore('audio', () => {
   // BackgroundAudioManager实例（全局唯一）
   const audioManager = ref<Taro.BackgroundAudioManager | null>(null)
@@ -103,10 +96,8 @@ export const useAudioStore = defineStore('audio', () => {
 
   // 进度条拖动状态
   const dragging = ref(false)
-  // 下一章节的“已准备好结果”
-  const nextChapterBuffer = ref<NextChapterBuffer | null>(null)
-  // 下一章节“正在准备中”的事实（Promise 既是锁也是状态）
-  const nextChapterPromise = ref<Promise<void> | null>(null)
+  // 是否需要重置播放位置，解决微信系统浮窗被关闭重新播放的问题
+  const shouldResetPosition = ref(false)
 
   // 计算属性
   const hasNext = computed(() => {
@@ -137,8 +128,6 @@ export const useAudioStore = defineStore('audio', () => {
 
     // 绑定事件监听器
     bindAudioEvents()
-
-    setupFloatingWindowWatcher()
     // ⭐ 注意：不在 init 阶段恢复断点，断点通过 playChapter 的 resumeFromRecord 恢复
     // restorePlaybackState()
   }
@@ -156,10 +145,6 @@ export const useAudioStore = defineStore('audio', () => {
     // 可以播放事件
     manager.onCanplay(() => {
       playbackState.isLoading = false
-      // nextTick 确保 duration 更新后渲染
-      nextTick(() => {
-        metadata.totalDuration = manager.duration
-      })
     })
 
     // 播放开始事件
@@ -172,6 +157,16 @@ export const useAudioStore = defineStore('audio', () => {
       }
 
       playbackState.isPlaying = true
+
+      // 如果微信系统浮窗被关闭，则重置播放位置，浮窗关闭会走 onStop 事件, onWaiting 事件, 所以这里需要在 onPlay 事件中处理
+      if (shouldResetPosition.value) {
+        shouldResetPosition.value = false
+
+        if (audioManager.value) {
+          audioManager.value.seek(0)
+          playbackState.currentTime = 0
+        }
+      }
 
       // ⭐ 广播播放事件（UI 可无侵入监听）
       audioEventBus.emit(AudioEvent.PLAY, {
@@ -195,33 +190,35 @@ export const useAudioStore = defineStore('audio', () => {
 
     // 停止事件
     manager.onStop(() => {
+      shouldResetPosition.value = true
       playbackState.isPlaying = false
       // ✅ 保存停止的进度，停止也上报（可能是因为用户主动结束本章学习）
       updateProgressAndSaveState('heart_beat_event')
+
+      audioEventBus.emit(AudioEvent.STOP)
     })
 
     // 播放结束事件
     manager.onEnded(() => {
       playbackState.isPlaying = false
 
+      // ⭐ 如果有错误，不自动播放下一首
+      if (playbackState.lastError.message) {
+        console.error('播放结束但有错误，不自动播放下一首')
+        return
+      }
+
       // 获取下一首ID
       const nextId = getNextId()
       if (!nextId) return
 
-      prepareNextChapter(nextId)
+      playChapter(nextId, false)
     })
 
     // 时间更新事件，拖动状态下防止触发页面组件重新渲染
     manager.onTimeUpdate(async () => {
       if (!dragging.value) {
         playbackState.currentTime = manager.currentTime
-      }
-      // 初始化总时长
-      if (!metadata.totalDuration && manager.duration) {
-        nextTick(() => {
-          // 防止某些播放器可能延迟获取 duration
-          metadata.totalDuration = manager.duration || metadata.totalDuration
-        })
       }
 
       // ⭐ 广播播放进度（不会阻塞播放）
@@ -251,10 +248,7 @@ export const useAudioStore = defineStore('audio', () => {
     manager.onNext(() => {
       audioEventBus.emit(AudioEvent.NEXT)
 
-      const nextId = getNextId()
-      if (nextId) {
-        prepareNextChapter(nextId)
-      }
+      playNext()
     })
 
     // 用户点击上一曲事件
@@ -262,65 +256,15 @@ export const useAudioStore = defineStore('audio', () => {
       manager.onPrev(() => {
         audioEventBus.emit(AudioEvent.PREV)
 
-        const prevId = getPrevId()
-        if (prevId) {
-          // ⭐ 修改：上一首不续播
-          playChapter(prevId, false)
-        }
+        playPrev()
       })
     }
-
-    // 用户点击停止事件
-    if (manager.onStop) {
-      manager.onStop(() => {
-        stop()
-      })
-    }
-  }
-
-  // init() 之后调用，解决系统浮窗被关闭同步播放状态的问题
-  const setupFloatingWindowWatcher = () => {
-    if (!audioManager.value) return
-
-    let intervalId: number | null = null
-
-    const checkPaused = () => {
-      const manager = audioManager.value
-      if (!manager) return
-
-      // 如果后台播放被暂停，并且 playbackState.isPlaying 还是 true，就同步状态
-      if (!manager.paused && !playbackState.isPlaying) {
-        // 播放中被系统暂停，不处理
-        return
-      }
-
-      if (manager.paused && playbackState.isPlaying) {
-        // 浮窗关闭或播放被系统暂停
-        playbackState.isPlaying = false
-        savePlaybackState()
-      }
-    }
-
-    // 每 500ms 检查一次
-    intervalId = setInterval(checkPaused, 500) as unknown as number
-
-    // 当小程序退出时清理定时器
-    Taro.onAppHide(() => {
-      if (intervalId) {
-        clearInterval(intervalId)
-        intervalId = null
-      }
-    })
   }
 
   /**
    * 设置播放列表
    */
   const setPlaylist = (playableIds: string[], currentId: string) => {
-    // 防止上一首的「下一章节缓存」污染当前播放链路
-    nextChapterBuffer.value = null
-    nextChapterPromise.value = null
-
     playlistState.playableIds = playableIds
     playlistState.currentPlayingId = currentId
     playlistState.currentIndex = playableIds.findIndex((id) => id === currentId)
@@ -334,6 +278,19 @@ export const useAudioStore = defineStore('audio', () => {
    */
   const getNextId = () => {
     if (playlistState.playableIds.length === 0) return null
+
+    // 单曲循环模式
+    if (playlistState.playMode === 'single') {
+      return null
+    }
+
+    // 随机播放模式
+    if (playlistState.playMode === 'random') {
+      const ids = playlistState.playableIds.filter(
+        (id) => id !== playlistState.currentPlayingId
+      )
+      return ids.length ? ids[Math.floor(Math.random() * ids.length)] : null
+    }
 
     const nextIndex =
       (playlistState.currentIndex + 1) % playlistState.playableIds.length
@@ -426,40 +383,6 @@ export const useAudioStore = defineStore('audio', () => {
   }
 
   /**
-   * 准备下一章节（获取URL和详情）
-   */
-  const prepareNextChapter = async (nextChapterId: string) => {
-    if (nextChapterPromise.value) {
-      await nextChapterPromise.value
-    }
-
-    const buffer = nextChapterBuffer.value
-    if (buffer?.chapterId === nextChapterId) {
-      nextChapterBuffer.value = null
-      await updateChapterAndPlay(
-        buffer.chapterId,
-        buffer.playUrl,
-        buffer.playedDuration
-      )
-      return
-    }
-
-    try {
-      // 先获取URL，检查是否可播放
-      const playUrlResult = await fetchPlayUrl(nextChapterId)
-
-      // 先更新章节信息（UI / 浮窗）
-      await updateChapterAndPlay(
-        nextChapterId,
-        playUrlResult.success ? playUrlResult.playUrl || '' : '',
-        0
-      )
-    } catch (error) {
-      console.error('准备下一章节出错:', error)
-    }
-  }
-
-  /**
    * 播放指定章节
    */
   const playChapter = async (
@@ -467,81 +390,84 @@ export const useAudioStore = defineStore('audio', () => {
     // ⭐ 默认从历史记录开始播放
     resumeFromRecord = true
   ) => {
-    // 防止上一首的「下一章节缓存」污染当前播放链路
-    nextChapterBuffer.value = null
-    nextChapterPromise.value = null
+    const manager = audioManager.value
+    if (!manager) return
+
+    clearError()
+
+    shouldResetPosition.value = false
+
+    // ⭐⭐⭐ 1：彻底打断上一首
+    manager.stop()
+    // ⭐⭐⭐ 2：等待微信内部状态完全 reset，防止在上一首音频尚未完成 canplay / 元数据初始化时，就切换到下一首，导致 BackgroundAudioManager 进入「半初始化态」
+    await nextTick()
 
     // 1. 获取播放URL
     const playUrlResult = await fetchPlayUrl(chapterId)
 
+    // 2. 获取章节详情并更新
+    await updateChapter(chapterId)
+
     if (!playUrlResult.success) {
       // 如果正在播放，暂停
-      if (playbackState.isPlaying && audioManager.value) {
-        audioManager.value.pause()
+      if (playbackState.isPlaying) {
+        manager.pause()
       }
+      playbackState.isPlaying = false
       return { success: false, errorCode: playbackState.lastError.code }
     }
 
-    // 2. 获取章节详情并更新播放器
-    const success = await updateChapterAndPlay(
-      chapterId,
-      playUrlResult.playUrl || '',
-      resumeFromRecord ? playUrlResult.playedDuration : 0
-    )
-    return { success }
+    const startTime = resumeFromRecord ? playUrlResult.playedDuration || 0 : 0
+
+    // ⭐ 核心：在任何异步之前就清空时间
+    playbackState.currentTime = 0
+    manager.startTime = 0
+
+    // 断点播放
+    if (startTime > 0) {
+      manager.startTime = startTime
+      playbackState.currentTime = startTime
+    }
+
+    manager.src = playUrlResult.playUrl!
+
+    audioEventBus.emit(AudioEvent.META_UPDATE, {
+      title: metadata.title,
+      cover: metadata.coverImgUrl,
+      chapterId: metadata.chapterId,
+      courseId: metadata.courseId,
+      startTime: resumeFromRecord ? playUrlResult.playedDuration || 0 : 0,
+      phase: 'play',
+    })
+
+    updateProgressAndSaveState('heart_beat_event')
+    return { success: true }
   }
 
-  /**
-   * 更新章节信息并播放
-   * 提取公共逻辑，避免重复代码
-   */
-  const updateChapterAndPlay = async (
-    chapterId: string,
-    playUrl: string,
-    startTime: number = 0
-  ) => {
+  // 只进入章节
+  const updateChapter = async (chapterId: string) => {
     try {
-      // 1. 获取章节详情
       const chapterDetail = (await fetchChapterDetail(
         chapterId
       )) as ChapterDetail
 
-      // 2. 更新当前播放ID和元数据
+      if (!chapterDetail) return null
+
       playlistState.currentPlayingId = chapterId
       playlistState.currentIndex = playlistState.playableIds.findIndex(
         (id) => id === chapterId
       )
-      metadata.title = chapterDetail?.title || ''
-      metadata.coverImgUrl = chapterDetail?.courseImageUrl || ''
-      metadata.chapterId = chapterDetail?.chapterId
+      metadata.title = chapterDetail.title || ''
+      metadata.coverImgUrl = chapterDetail.courseImageUrl || ''
+      metadata.totalDuration = chapterDetail.totalDuration || 0
+      metadata.chapterId = chapterDetail.chapterId
       metadata.courseId = chapterDetail.courseId
 
-      // 3. 设置音频源并播放
       const manager = audioManager.value
       if (manager) {
         manager.title = metadata.title
         manager.coverImgUrl = metadata.coverImgUrl
-        // ✅ 强制归零（关键）解决当每个章节都是 100% 的时候，自然过度到下一个章节会导致每个章节都从断点播放
-        manager.startTime = 0
-        // 设置src后会自动开始播放
-        manager.src = playUrl
-        // ⭐ 关键：用接口记录的播放进度断点续播
-        if (startTime > 0) {
-          manager.startTime = startTime
-          playbackState.currentTime = startTime
-        }
       }
-
-      audioEventBus.emit(AudioEvent.META_UPDATE, {
-        title: metadata.title,
-        cover: metadata.coverImgUrl,
-        chapterId: metadata.chapterId,
-        courseId: metadata.courseId,
-        startTime,
-      })
-
-      // 4. 保存状态
-      updateProgressAndSaveState('heart_beat_event')
 
       return true
     } catch (error) {
@@ -567,13 +493,9 @@ export const useAudioStore = defineStore('audio', () => {
    * 下一首
    */
   const playNext = async () => {
-    // 防止上一首的「下一章节缓存」污染当前播放链路
-    nextChapterBuffer.value = null
-    nextChapterPromise.value = null
-
     const nextId = getNextId()
     if (nextId) {
-      prepareNextChapter(nextId)
+      playChapter(nextId, false)
     }
   }
 
@@ -581,13 +503,9 @@ export const useAudioStore = defineStore('audio', () => {
    * 上一首
    */
   const playPrev = async () => {
-    // 防止上一首的「下一章节缓存」污染当前播放链路
-    nextChapterBuffer.value = null
-    nextChapterPromise.value = null
-
     const prevId = getPrevId()
     if (prevId) {
-      playChapter(prevId)
+      playChapter(prevId, false)
     }
   }
 
@@ -703,7 +621,12 @@ export const useAudioStore = defineStore('audio', () => {
     savePlaybackState()
 
     // 2. 更新服务器学习进度
-    if (metadata.chapterId && metadata.courseId && playbackState.isPlaying) {
+    if (
+      metadata.chapterId &&
+      metadata.courseId &&
+      playbackState.isPlaying &&
+      playbackState.currentTime > 1
+    ) {
       updateLearningProgress(eventType)
     }
   }
@@ -796,7 +719,6 @@ export const useAudioStore = defineStore('audio', () => {
     init,
     setPlaylist,
     playChapter,
-    prepareNextChapter,
     togglePlayPause,
     playNext,
     playPrev,
