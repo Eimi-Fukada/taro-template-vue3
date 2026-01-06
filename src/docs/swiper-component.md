@@ -20,6 +20,30 @@ import CoursesRecommend from './components/CoursesRecommend.vue'
 
 const commentListRef = ref(null) as any
 
+const getReviewList: FetchDataFunction<CourseReviewItem> = async (
+  page,
+  pageSize
+) => {
+  const { data } = await apis.get['/course/app/review/list']({
+    data: {
+      courseId: routerParams?.id || '',
+      pageSize,
+      pageNum: page,
+      ...(state.commentRating !== 0 && { rating: state.commentRating }),
+    },
+  })
+  return {
+    list: data?.rows || [],
+    total: data?.total || 0,
+    hasMore: data?.hasNext || false,
+  }
+}
+
+const handleCommentChange = (rating: number) => {
+  state.commentRating = rating
+  commentListRef.value?.refresh()
+}
+
 // Swiper 配置数组 - 管理所有页面组件
 const SWIPER_CONFIG = computed(() => [
   // 简介
@@ -47,14 +71,14 @@ const SWIPER_CONFIG = computed(() => [
     key: 'comment',
     component: markRaw(CoursesComment),
     props: {
-      allowComment: true,
-      maxLength: 500,
-      showEmoji: true,
+      reviewCount: state.reviewCount,
+      fetchData: getReviewList,
     },
     events: {
       // 注意这里的 onChange 事件名
       // 子组件向外 emit 的是 change 事件，而不是 onChange
       onChange: handleCommentChange,
+      onRefreshComplete: getReviewCount,
     },
     ref: commentListRef,
   },
@@ -83,7 +107,8 @@ onMounted(() => {
 ```vue
 <template>
   <Swiper
-    class="w-full flex-1"
+    class="w-full"
+    :style="{ minHeight: 'calc(100vh - 340px)' }"
     :current="state.current"
     :indicatorDots="false"
     @change="(e) => (state.current = e.detail.current)"
@@ -110,8 +135,8 @@ onMounted(() => {
 ```typescript
 // 响应式状态
 const state = reactive({
-  current: 0, // 当前显示的页面索引
-  
+  // 当前显示的页面索引
+  current: 0, 
   // 页面数据
   principalInfoList: [],
   data: {
