@@ -401,8 +401,8 @@ export const useAudioStore = defineStore('audio', () => {
 
     shouldResetPosition.value = false
 
-    // ⭐⭐⭐ 1：彻底打断上一首
-    manager.stop()
+    // ⭐⭐⭐ 1：彻底打断上一首，用 stop 会让音频彻底结束
+    manager.pause()
     // ⭐⭐⭐ 2：等待微信内部状态完全 reset，防止在上一首音频尚未完成 canplay / 元数据初始化时，就切换到下一首，导致 BackgroundAudioManager 进入「半初始化态」
     await nextTick()
 
@@ -431,22 +431,9 @@ export const useAudioStore = defineStore('audio', () => {
 
     // ✅ 先设置 src
     manager.src = playUrlResult.playUrl!
-    // ✅ 第一次设置 src：系统可能自动播放，但页面返回后再次设置 src：系统不会自动播放，在设置 src 后调用
-    manager.play()
 
-    let pendingSeekTime = resumeTime
-
-    // ✅ 关键：只在 canplay 后 seek
-    const handleCanplay = () => {
-      if (pendingSeekTime > 0) {
-        manager.seek(pendingSeekTime)
-        playbackState.currentTime = pendingSeekTime
-        pendingSeekTime = 0
-      }
-    }
-
-    // ✅ BackgroundAudioManager 在 src 被重新赋值时会重置内部状态，所以 startTime 在 src 之前或之后设置都不可靠，只有 onCanplay → seek() 是稳定生效点。
-    manager.onCanplay(handleCanplay)
+    playbackState.currentTime = resumeTime
+    manager.startTime = resumeTime
 
     audioEventBus.emit(AudioEvent.META_UPDATE, {
       title: metadata.title,
