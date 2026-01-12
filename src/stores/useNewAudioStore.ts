@@ -215,6 +215,10 @@ export const useAudioStore = defineStore('audio', () => {
       playChapter(nextId, false)
     })
 
+    manager.onWaiting(() => {
+      console.log('onWaiting')
+    })
+
     // 时间更新事件，拖动状态下防止触发页面组件重新渲染
     manager.onTimeUpdate(async () => {
       if (!dragging.value) {
@@ -417,19 +421,31 @@ export const useAudioStore = defineStore('audio', () => {
       return { success: false, errorCode: playbackState.lastError.code }
     }
 
-    const startTime = resumeFromRecord ? playUrlResult.playedDuration || 0 : 0
+    // ✅ 只在这里计算恢复进度
+    const resumeTime = resumeFromRecord ? playUrlResult.playedDuration ?? 0 : 0
 
     // ⭐ 核心：在任何异步之前就清空时间
     playbackState.currentTime = 0
     manager.startTime = 0
 
-    // 断点播放
-    if (startTime > 0) {
-      manager.startTime = startTime
-      playbackState.currentTime = startTime
+    // ✅ 先设置 src
+    manager.src = playUrlResult.playUrl!
+    // ✅ 第一次设置 src：系统可能自动播放，但页面返回后再次设置 src：系统不会自动播放，在设置 src 后调用
+    manager.play()
+
+    let pendingSeekTime = resumeTime
+
+    // ✅ 关键：只在 canplay 后 seek
+    const handleCanplay = () => {
+      if (pendingSeekTime > 0) {
+        manager.seek(pendingSeekTime)
+        playbackState.currentTime = pendingSeekTime
+        pendingSeekTime = 0
+      }
     }
 
-    manager.src = playUrlResult.playUrl!
+    // ✅ BackgroundAudioManager 在 src 被重新赋值时会重置内部状态，所以 startTime 在 src 之前或之后设置都不可靠，只有 onCanplay → seek() 是稳定生效点。
+    manager.onCanplay(handleCanplay)
 
     audioEventBus.emit(AudioEvent.META_UPDATE, {
       title: metadata.title,
