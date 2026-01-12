@@ -39,9 +39,9 @@ export const useViewModel = () => {
         content: '试听已结束，立即购买可解锁全部章节~',
         cancelText: '稍后再说',
         confirmText: '立即购买',
-        onCancel: () => {
-          clearError()
-        },
+        // onCancel: () => {
+        //   clearError()
+        // },
         onConfirm: () => {
           globalDialog.hide()
           clearError()

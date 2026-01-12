@@ -417,6 +417,7 @@ export const useAudioStore = defineStore('audio', () => {
       if (playbackState.isPlaying) {
         manager.pause()
       }
+      playbackState.currentTime = 0
       playbackState.isPlaying = false
       return { success: false, errorCode: playbackState.lastError.code }
     }
